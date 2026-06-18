@@ -1,0 +1,47 @@
+# Beskid Snap definition.
+#
+# Built by canonical/action-build in the linux-snap CI job. Uses classic
+# confinement so the prebuilt Beskid binaries land directly on the user's PATH
+# (no confinement jail). The binaries themselves are glibc-linked Linux ELF
+# built by the compiler workflow; the snap's base is core22 to match glibc ABI.
+#
+# The snap is assembled by an `assemble` part that pulls the rolling
+# cli-latest / lsp-latest linux-amd64 assets from beskid_compiler at build time.
+# Source override happens in CI: the part source is the beskid_distrib/snap
+# directory, and the pull step fetches the rolling binaries.
+name: beskid
+base: core22
+version: '__VERSION__'
+summary: Beskid compiler CLI and LSP (AOT, host composition)
+description: |
+  Beskid is an AOT-only compiler with host composition. This snap ships the
+  prebuilt beskid CLI and beskid_lsp binaries for x86_64 Linux.
+license: MIT
+grade: stable
+confinement: classic
+architectures:
+  - build-on: [amd64]
+    build-for: [amd64]
+
+apps:
+  beskid:
+    command: bin/beskid
+  beskid-lsp:
+    command: bin/beskid_lsp
+
+parts:
+  beskid-binaries:
+    plugin: nil
+    source: .
+    # Build-time override: the linux-snap CI job pre-fetches the rolling
+    # binaries into snap/bin before invoking snapcraft, so no network fetch is
+    # needed inside the LXD build. The organize step places them under /usr/bin
+    # in the snap layout, which classic confinement exposes on PATH.
+    override-build: |
+      craftctl default
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      cp -v bin/beskid bin/beskid_lsp "$CRAFT_PART_INSTALL/bin/"
+      chmod 0755 "$CRAFT_PART_INSTALL/bin/beskid" "$CRAFT_PART_INSTALL/bin/beskid_lsp"
+    organize:
+      # Placeholder; the override-build above is authoritative.
+      unused: unused

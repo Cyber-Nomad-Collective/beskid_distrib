@@ -1,0 +1,21 @@
+#!/bin/sh
+# postinst: invoked by dpkg after the package files are unpacked.
+# Beskid installs to /usr/bin (already on PATH by default on Debian/Ubuntu), so
+# no PATH manipulation is needed. This hook exists to make the binaries
+# executable (dpkg should already preserve mode, but enforce it) and to print
+# a friendly install confirmation.
+set -e
+
+chmod 0755 /usr/bin/beskid /usr/bin/beskid_lsp 2>/dev/null || true
+
+cat <<'EOF'
+
+  Beskid installed.
+  Verify:    beskid --version
+  Start:     beskid --help
+
+  The LSP is available as `beskid_lsp` for editor integration.
+
+EOF
+
+exit 0

@@ -1,0 +1,13 @@
+Package: beskid
+Version: __VERSION__
+Architecture: amd64
+Maintainer: Piotr Mikstacki <piotr@beskid-lang.org>
+Installed-Size: __INSTALLED_SIZE_KB__
+Depends: libc6
+Section: devel
+Priority: optional
+Homepage: https://beskid-lang.org
+Description: Beskid compiler CLI and LSP (AOT, host composition)
+ Beskid is an AOT-only compiler with host composition. This package ships the
+ prebuilt beskid CLI and beskid_lsp binaries, installed to /usr/bin and placed
+ on the system PATH automatically.

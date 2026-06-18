@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Beskid Windows Installer (WiX v4).
+
+  Builds an MSI that:
+    - installs beskid.exe (CLI) + beskid_lsp.exe (LSP) into Program Files\Beskid
+    - adds Program Files\Beskid to the system PATH (reboot-persistent, via the
+      MSI Environment table)
+    - registers an uninstall entry (Add/Remove Programs) with version + publisher
+    - shows a directory-picker dialog so the user can change the install path
+
+  Built with WiX v4:  wix build beskid.wxs -o beskid-<version>.msi
+  Variables (-d):     Version=<semver>  InstallDir=<default install path>
+
+  References:
+    Environment table / PATH: https://wixtoolset.org/docs/v3/xsd/wix/environment/
+    WiX v4 CLI:               dotnet tool install -g wix  &&  wix build
+-->
+<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'>
+  <Package
+    Name='Beskid'
+    Manufacturer='Cyber Nomad Collective'
+    Language='1033'
+    Codepage='1252'
+    Version='$(var.Version)'
+    UpgradeCode='8d4c3f2a-1b5e-4a6c-9d8e-7f0a1b2c3d4e'>
+
+    <SummaryInfo
+      Description='Beskid compiler CLI and LSP installer'
+      Manufacturer='Cyber Nomad Collective'
+      Codepage='1252' />
+
+    <!-- Major upgrade: a newer MSI supersedes an older one. -->
+    <MajorUpgrade
+      DowngradeErrorMessage='A newer version of Beskid is already installed. [2]' />
+
+    <Media Id='1' Cabinet='beskid.cab' EmbedCab='yes' />
+
+    <!-- Per-machine install (Program Files, all users share PATH). -->
+    <Property Id='ALLUSERS' Value='1' />
+
+    <!--
+      Directory picker. The built-in WixUI_InstallDir dialog set lets the user
+      change INSTALLDIR; requires WixUIExtension in WiX v3, but in v4 the UI
+      is selected via <WixVariable> + the UI element below.
+    -->
+    <Property Id='WIXUI_INSTALLDIR' Value='INSTALLDIR' />
+    <UI>
+      <UIRef Id='WixUI_InstallDir' />
+      <UIRef Id='WixUI_ErrorProgressText' />
+    </UI>
+    <WixVariable Id='WixUIInstallDir' Value='INSTALLDIR' />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFiles64Folder'>
+        <Directory Id='INSTALLDIR' Name='Beskid'>
+          <Component Id='BeskidCli' Guid='a1b2c3d4-0001-4000-8000-000000000001'>
+            <File Id='BeskidExe' Source='$(var.BuildDir)\beskid.exe' KeyPath='yes' />
+          </Component>
+          <Component Id='BeskidLsp' Guid='a1b2c3d4-0001-4000-8000-000000000002'>
+            <File Id='BeskidLspExe' Source='$(var.BuildDir)\beskid_lsp.exe' KeyPath='yes' />
+          </Component>
+          <Component Id='BeskidPath' Guid='a1b2c3d4-0001-4000-8000-000000000003'>
+            <!-- Adds INSTALLDIR to the machine PATH. Part="all" persists across reboots. -->
+            <Environment
+              Id='PATH'
+              Name='PATH'
+              Value='[INSTALLDIR]'
+              Permanent='no'
+              Part='last'
+              Action='set'
+              System='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <!-- Start Menu shortcut to a CLI prompt is intentionally omitted: the
+           compiler is a command-line tool; users invoke it from their own shell
+           once INSTALLDIR is on PATH. -->
+      <Directory Id='ProgramMenuFolder' />
+    </Directory>
+
+    <Feature Id='Complete' Title='Beskid' Level='1'>
+      <ComponentRef Id='BeskidCli' />
+      <ComponentRef Id='BeskidLsp' />
+      <ComponentRef Id='BeskidPath' />
+    </Feature>
+
+    <!-- Icon shown in Add/Remove Programs (not the MSI file icon). -->
+    <Icon Id='beskid.ico' SourceFile='$(var.AssetsDir)\icons\beskid.ico' />
+    <Property Id='ARPPRODUCTICON' Value='beskid.ico' />
+    <SetProperty Id='ARPINSTALLDIR' Value='[INSTALLDIR]' After='CostFinalize' />
+  </Package>
+</Wix>

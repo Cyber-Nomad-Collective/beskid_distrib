@@ -1,0 +1,6 @@
+#!/bin/sh
+# prerm: invoked by dpkg before removal. Beskid leaves no user data; nothing to
+# clean up beyond the binaries dpkg removes itself.
+set -e
+
+exit 0
