@@ -1,14 +1,15 @@
-# Windows Guide — obtaining CI secrets for the MSI pipeline
+# Windows Guide — obtaining CI secrets for the MSI and EXE pipeline
 
 The Windows packaging job (`windows-msi` in the superrepo's `distribute.yml`)
-builds an MSI with WiX v4 and uploads it to the `cli-latest` /
-`cli-v<version>` release on `beskid_compiler`. It needs **one** secret.
+builds an MSI with WiX v4, wraps it in a WiX Burn EXE bootstrapper, and uploads
+both to the `cli-latest` / `cli-v<version>` release on `beskid_compiler`. It
+needs **one** secret.
 
 ## Secret required
 
 | Secret | Purpose |
 |---|---|
-| `DISTRIB_GH_PAT` | Download the rolling `beskid-windows-amd64.exe` + `beskid_lsp-windows-amd64.exe` from `beskid_compiler`, and upload the built `.msi` back to that release. |
+| `DISTRIB_GH_PAT` | Download immutable `cli-v<version>` / `lsp-v<version>` binaries from `beskid_compiler`, and upload the built `.msi` and bootstrapper `.exe`. |
 
 ## Obtaining `DISTRIB_GH_PAT`
 

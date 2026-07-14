@@ -1,10 +1,11 @@
-# macOS Guide — obtaining CI secrets for the Homebrew pipeline
+# macOS Guide — Homebrew and DMG distribution
 
-The macOS packaging job (`macos-brew`) renders the formula from
-`beskid_distrib/macos/Formula/beskid.rb.tpl` with the rolling version + sha256
-of the `aarch64-apple-darwin` asset, then pushes it to the
-`Cyber-Nomad-Collective/beskid_homebrew` tap via
-`Justintime50/homebrew-releaser@v3`.
+The `macos-brew` job renders the formula from
+`beskid_distrib/macos/Formula/beskid.rb.tpl` using the immutable version and
+SHA-256 of the `aarch64-apple-darwin` asset, then pushes it to the
+`Cyber-Nomad-Collective/beskid_homebrew` tap. The separate `macos-dmg` job
+wraps the same immutable CLI and LSP assets into `Beskid.app` and uploads a
+DMG to the corresponding compiler release.
 
 ## Prerequisites (one-time, manual)
 
@@ -27,8 +28,8 @@ of the `aarch64-apple-darwin` asset, then pushes it to the
 
 | Secret | Purpose |
 |---|---|
-| `DISTRIB_GH_PAT` | Read the `aarch64-apple-darwin` asset (sha256) from `beskid_compiler`'s `cli-latest` release. (Shared with Windows/Ubuntu — set once.) |
-| `HOMEBREW_TAP_GIT_TOKEN` | PAT that homebrew-releaser uses to commit + push `Formula/beskid.rb` to `beskid_homebrew`. The default `GITHUB_TOKEN` cannot cross-push to another repo, so a dedicated PAT is mandatory. |
+| `DISTRIB_GH_PAT` | Read immutable macOS assets and upload the DMG to `beskid_compiler`. (Shared with Windows/Ubuntu — set once.) |
+| `HOMEBREW_TAP_GIT_TOKEN` | PAT used to commit + push `Formula/beskid.rb` to `beskid_homebrew`. The default `GITHUB_TOKEN` cannot cross-push to another repo, so a dedicated PAT is mandatory. |
 
 ## Obtaining `HOMEBREW_TAP_GIT_TOKEN`
 
@@ -54,12 +55,9 @@ Adding Intel later requires extending `compiler.yml`'s build matrix with
 `x86_64-apple-darwin`, fetching that asset, and adding a second
 `on_intel do ... end` block pointing at the Intel URL + sha256.
 
-## No notarization (v1)
+## Signing and notarization
 
-The CLI binary is shipped as a bare Mach-O fetched from the GitHub release, not
-inside a `.app` bundle or `.pkg`, so macOS Gatekeeper does **not** block it
-(Gatekeeper only quarantines apps with a `com.apple.quarantine` extended
-attribute that browsers attach to downloaded bundles; Homebrew does not set
-quarantine on installed binaries). When a Developer ID is obtained later,
-add a notarization step that submits the darwin-arm64 asset to Apple's
-notarytool and staples a ticket.
+The current DMG is unsigned. Gatekeeper can warn when a browser-downloaded DMG
+is opened. Add Developer ID signing and notarization before declaring the DMG
+as a trusted public release channel; Homebrew remains the recommended
+package-managed installation path until then.

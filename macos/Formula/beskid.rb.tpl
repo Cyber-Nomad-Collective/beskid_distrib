@@ -1,7 +1,7 @@
 # Beskid Homebrew formula template.
 #
 # Rendered by the macos-brew CI job with:
-#   __VERSION__  -> rolling semver (from cli-latest cli-version.txt)
+#   __VERSION__  -> immutable release semver
 #   __SHA256__   -> sha256 of the darwin-arm64 CLI release asset
 #
 # The rendered file is committed to Cyber-Nomad-Collective/beskid_homebrew
@@ -11,7 +11,7 @@
 class Beskid < Formula
   desc "Beskid compiler CLI (AOT, host composition)"
   homepage "https://beskid-lang.org"
-  url "https://github.com/Cyber-Nomad-Collective/beskid_compiler/releases/download/cli-latest/beskid-darwin-arm64"
+  url "https://github.com/Cyber-Nomad-Collective/beskid_compiler/releases/download/cli-v__VERSION__/beskid-darwin-arm64"
   version "__VERSION__"
   sha256 "__SHA256__"
 

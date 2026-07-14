@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!-- WiX Burn bootstrapper: the downloadable Windows .exe chains the MSI. -->
+<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'
+     xmlns:bal='http://wixtoolset.org/schemas/v4/wxs/bal'>
+  <Bundle
+    Name='Beskid'
+    Manufacturer='Cyber Nomad Collective'
+    Version='$(var.Version)'
+    UpgradeCode='68111af0-f0f1-4d30-bcc3-c52ea3166819'>
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+        LicenseUrl=''
+        Theme='hyperlinkLicense'
+        LogoFile='$(var.AssetsDir)\icons\beskid-512.png' />
+    </BootstrapperApplication>
+    <Chain>
+      <MsiPackage SourceFile='$(var.MsiPath)' />
+    </Chain>
+  </Bundle>
+</Wix>
