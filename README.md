@@ -16,7 +16,6 @@ CI orchestration lives in the superrepo at
 - `macos/Formula/beskid.rb.tpl` — Homebrew formula template rendered with the
   rolling version + sha256 and pushed to `beskid_homebrew` by
   `homebrew-releaser`.
-- `arch/PKGBUILD` — AUR `beskid-bin` package definition.
 - `deb/` — `dpkg-deb` control tree template + `build-deb.sh` for Ubuntu/Debian.
 - `snap/snapcraft.yaml` — Snapcraft definition (classic confinement).
 - `scripts/` — helpers to resolve the current version and fetch immutable
@@ -30,7 +29,6 @@ CI orchestration lives in the superrepo at
 | Windows `.msi` + `.exe` | GitHub release on `beskid_compiler` (`cli-latest`, `cli-v<ver>`) |
 | macOS `.dmg` | GitHub release on `beskid_compiler` (`cli-latest`, `cli-v<ver>`) |
 | macOS Homebrew | `Cyber-Nomad-Collective/beskid_homebrew` tap (`brew install beskid`) |
-| Arch | AUR package `beskid-bin` (`yay -S beskid-bin`) |
 | Ubuntu/Debian `.deb` | GitHub release on `beskid_compiler` (`cli-latest`, `cli-v<ver>`) |
 | Snap | Snap Store (`snap install beskid --classic`) |
 
