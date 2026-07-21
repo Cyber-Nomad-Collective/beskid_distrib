@@ -20,4 +20,10 @@ trap 'rm -rf "$tmp"' EXIT
 gh release download cli-latest --repo "$REPO" --pattern "cli-version.txt" --dir "$tmp" --clobber
 
 [[ -f "$tmp/cli-version.txt" ]] || { echo "cli-version.txt not found on cli-latest" >&2; exit 1; }
-tr -d '[:space:]' < "$tmp/cli-version.txt"
+version="$(tr -d '[:space:]' < "$tmp/cli-version.txt")"
+# Fail closed: distribution may only consume the compiler-minted global SemVer.
+[[ "${version}" =~ ^0\.4\.(0|[1-9][0-9]*)$ ]] || {
+  echo "cli-latest cli-version.txt is absent or not strict 0.4.<build>: ${version:-<empty>}" >&2
+  exit 1
+}
+printf '%s' "${version}"
