@@ -7,14 +7,15 @@ Actions**. Per-platform setup instructions live in `docs/<Platform>_Guide.md`.
 | Secret | Required by | Scope / Notes |
 |---|---|---|
 | `DISTRIB_GH_PAT` | all platform jobs | Classic PAT, `repo` scope. Used to download `cli-latest`/`lsp-latest` assets from `beskid_compiler` and upload `.msi`/`.deb` back to those releases. If `beskid_compiler` is private, this PAT must have access to `Cyber-Nomad-Collective`. |
-| `HOMEBREW_TAP_GIT_TOKEN` | `macos-brew` | Classic PAT, `repo` scope on `Cyber-Nomad-Collective/beskid_homebrew`. Cross-repo formula push; the default `GITHUB_TOKEN` cannot do this. |
-| `SNAPCRAFT_STORE_CREDENTIALS` | `linux-snap` | Snap Store login credentials. Generate via `snapcraft export-login` (or the Snap Store dashboard). The legacy `SNAPCRAFT_TOKEN` is deprecated. |
+| `HOMEBREW_TAP_GIT_TOKEN` | `macos-brew` | Classic PAT, `repo` scope on `Cyber-Nomad-Collective/beskid_homebrew`. Cross-repo formula push; the default `GITHUB_TOKEN` cannot do this. Optional — if absent the `macos-brew` job is skipped. |
+| `SNAPCRAFT_STORE_CREDENTIALS` | `linux-snap` | Snap Store login credentials. Generate via `snapcraft export-login` (or the Snap Store dashboard). The legacy `SNAPCRAFT_TOKEN` is deprecated. Optional — if absent the `linux-snap` job is skipped. |
 
 ## Minimum viable set
 
-The superrepo workflow preflight requires the full set above before any
-platform job runs. To publish without Snap or Homebrew, the workflow would
-need a separate change to make those jobs optional.
+Only `DISTRIB_GH_PAT` is required. `HOMEBREW_TAP_GIT_TOKEN` and
+`SNAPCRAFT_STORE_CREDENTIALS` are optional — the corresponding platform jobs
+(`macos-brew`, `linux-snap`) are skipped with a warning if their secret is
+absent, allowing the remaining platform jobs to proceed.
 
 ## Rotation
 

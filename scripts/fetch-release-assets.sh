@@ -9,6 +9,9 @@
 # Env: GH_TOKEN (read access on Cyber-Nomad-Collective/beskid_compiler)
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+source "${ROOT}/target-map.sh"
+
 STREAM="${1:?stream (cli | lsp)}"
 VERSION="${2:?version (SemVer)}"
 TARGET="${3:?target triple}"
@@ -22,19 +25,7 @@ REPO="Cyber-Nomad-Collective/beskid_compiler"
   exit 1
 }
 
-case "${STREAM}" in
-  cli) prefix="beskid" ;;
-  lsp) prefix="beskid_lsp" ;;
-  *) echo "Unsupported stream: ${STREAM}" >&2; exit 1 ;;
-esac
-
-case "${TARGET}" in
-  x86_64-unknown-linux-gnu) asset="${prefix}-linux-amd64" ;;
-  aarch64-apple-darwin)     asset="${prefix}-darwin-arm64" ;;
-  x86_64-pc-windows-msvc)   asset="${prefix}-windows-amd64.exe" ;;
-  *) echo "Unsupported target: ${TARGET}" >&2; exit 1 ;;
-esac
-
+asset="$(target_asset_name "${STREAM}" "${TARGET}")"
 tag="${STREAM}-v${VERSION}"
 echo "Fetching ${asset} from ${REPO}@${tag}..."
 gh release download "${tag}" --repo "${REPO}" --pattern "${asset}" --clobber

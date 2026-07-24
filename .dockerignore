@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+.dockerignore
+beskid_distrib/docker/
+
+# Build artifacts
+*.msi
+*.deb
+*.snap
+*.dmg
+beskid-*-amd64
+beskid-darwin-arm64
+
+# CI
+.github/
+
+# Docs / tests
+beskid_distrib/docs/
+beskid_distrib/tests/
+
+# macOS
+.DS_Store

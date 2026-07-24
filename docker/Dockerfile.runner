@@ -1,0 +1,28 @@
+# Extends the beskid base image with GitHub Actions runner dependencies.
+#
+# This image is meant for CI runners that need beskid + curl, jq, git etc.
+# to interact with GitHub APIs and perform distribution tasks.
+
+FROM ghcr.io/cyber-nomad-collective/beskid:latest AS beskid-base
+
+ARG BESKID_VERSION=latest
+
+# Real stage inherits the beskid binary and adds CI tooling.
+FROM debian:bookworm-slim
+
+COPY --from=beskid-base /usr/local/bin/beskid /usr/local/bin/beskid
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      jq \
+      git \
+      unzip \
+      gnupg \
+      && rm -rf /var/lib/apt/lists/*
+
+LABEL org.opencontainers.image.source="https://github.com/Cyber-Nomad-Collective/beskid" \
+      org.opencontainers.image.description="Beskid CLI with GitHub Actions runner tooling" \
+      org.opencontainers.image.licenses="MIT"
+
+ENTRYPOINT ["beskid"]
