@@ -21,7 +21,8 @@ assert_file_exists() {
 }
 
 # Every package must be built from an immutable, versioned compiler release;
-# cli-latest is only an alias for discovery, never a packaging input.
+# `cli-stable` and `cli-unstable` are discovery channels; package inputs must
+# still come from immutable `cli-v*` tags.
 assert_contains "${root}/scripts/fetch-release-assets.sh" 'tag="${STREAM}-v${VERSION}"'
 
 # Shared target→asset mapping is extracted into a single sourced file.
