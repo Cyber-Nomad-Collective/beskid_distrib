@@ -4,7 +4,7 @@ services:
       context: ../..
       dockerfile: beskid_distrib/docker/Dockerfile
       args:
-        BESKID_VERSION: latest
+        BESKID_VERSION: stable
     image: beskid:local
     entrypoint: ["beskid"]
     command: ["--version"]
@@ -17,7 +17,7 @@ services:
       context: ../..
       dockerfile: beskid_distrib/docker/Dockerfile.runner
       args:
-        BESKID_VERSION: latest
+        BESKID_VERSION: stable
     image: beskid-runner:local
     entrypoint: ["beskid"]
     command: ["--version"]

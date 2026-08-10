@@ -1,12 +1,18 @@
 # ── Stage 1: download the beskid CLI binary from GitHub releases ──
 FROM alpine:3.21 AS fetcher
 
-ARG BESKID_VERSION=latest
+ARG BESKID_VERSION=stable
 RUN apk add --no-cache curl
 
-# Resolve tag: "latest" → cli-latest, otherwise cli-v<version>
-RUN if [ "$BESKID_VERSION" = "latest" ]; then \
-      TAG="cli-latest"; \
+# Resolve CLI download tag from the provided release specifier.
+# Accepted values:
+# - "stable" for cli-stable
+# - "unstable" for cli-unstable
+# - any SemVer string (e.g. 0.1.77) for cli-v<version>
+RUN if [ "$BESKID_VERSION" = "stable" ]; then \
+      TAG="cli-stable"; \
+    elif [ "$BESKID_VERSION" = "unstable" ]; then \
+      TAG="cli-unstable"; \
     else \
       TAG="cli-v${BESKID_VERSION}"; \
     fi && \
