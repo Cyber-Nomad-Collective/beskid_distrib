@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetch the rolling cli-latest / lsp-latest release assets for one or more
+# Fetch the rolling CLI/LSP release assets for one or more
 # targets from Cyber-Nomad-Collective/beskid_compiler into the caller's CWD.
 #
 # Usage: fetch-rolling-assets.sh <stream> <target> [<out-name>]
@@ -21,10 +21,19 @@ OUT_NAME="${3:-}"
 
 REPO="Cyber-Nomad-Collective/beskid_compiler"
 : "${GH_TOKEN:?GH_TOKEN must be exported (read on ${REPO})}"
+CHANNEL="${BESKID_RELEASE_CHANNEL:-stable}"
+ROLLING_TAG="${CLI_ROLLING_TAG:-}"
 
 asset="$(target_asset_name "${STREAM}" "${TARGET}")"
-tag="cli-latest"
-[[ "$STREAM" == "lsp" ]] && tag="lsp-latest"
+if [[ -z "$ROLLING_TAG" ]]; then
+  case "$CHANNEL" in
+    stable|unstable) ;;
+    *) echo "Unsupported release channel: ${CHANNEL}" >&2; exit 1 ;;
+  esac
+  ROLLING_TAG="${STREAM}-${CHANNEL}"
+fi
+
+tag="$ROLLING_TAG"
 
 echo "Fetching ${asset} from ${REPO}@${tag}..."
 gh release download "$tag" --repo "$REPO" --pattern "$asset" --clobber

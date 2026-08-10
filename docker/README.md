@@ -7,18 +7,18 @@ Pre-built container images for the Beskid CLI, published to GitHub Container Reg
 
 | Image | Description |
 |---|---|
-| `beskid:latest` | Minimal runtime — just the `beskid` binary on Debian Bookworm Slim. |
+| `beskid:stable` / `beskid:unstable` | Minimal runtime — just the `beskid` binary on Debian Bookworm Slim. |
 | `beskid:<version>` | Pinned release (e.g. `beskid:0.5.2`). |
-| `beskid-runner:<version>` | Beskid + curl, jq, git, unzip, gnupg — for GitHub Actions and CI. |
+| `beskid-runner:stable` / `beskid-runner:unstable` | Beskid + curl, jq, git, unzip, gnupg — for GitHub Actions and CI. |
 
 ## Quickstart
 
 ```sh
 # Show version
-docker run ghcr.io/cyber-nomad-collective/beskid:latest --version
+docker run ghcr.io/cyber-nomad-collective/beskid:stable --version
 
 # Build a project (mount the workspace)
-docker run -v $(pwd):/workspace ghcr.io/cyber-nomad-collective/beskid:latest build
+docker run -v $(pwd):/workspace ghcr.io/cyber-nomad-collective/beskid:stable build
 
 # Pin a specific version
 docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
@@ -28,7 +28,7 @@ docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
 
 ```yaml
 # Use the container action directly
-- uses: docker://ghcr.io/cyber-nomad-collective/beskid:latest
+- uses: docker://ghcr.io/cyber-nomad-collective/beskid:stable
   with:
     args: build
 
@@ -36,7 +36,7 @@ docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
 - name: Build with Beskid
   run: |
     docker run -v ${{ github.workspace }}:/workspace \
-      ghcr.io/cyber-nomad-collective/beskid-runner:latest build
+      ghcr.io/cyber-nomad-collective/beskid-runner:stable build
 ```
 
 ## Local testing
@@ -44,12 +44,12 @@ docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
 ```sh
 # Build the generic image
 docker build -f beskid_distrib/docker/Dockerfile \
-  --build-arg BESKID_VERSION=latest \
+  --build-arg BESKID_VERSION=stable \
   -t beskid:local .
 
 # Build the runner image
 docker build -f beskid_distrib/docker/Dockerfile.runner \
-  --build-arg BESKID_VERSION=latest \
+  --build-arg BESKID_VERSION=stable \
   -t beskid-runner:local .
 
 # Or use docker-compose (see docker-compose.yml)
