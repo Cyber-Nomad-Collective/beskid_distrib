@@ -24,10 +24,26 @@ if [[ "${ROLLING_TAG}" != cli-stable && "${ROLLING_TAG}" != cli-unstable ]]; the
   exit 1
 fi
 
-gh release download "$ROLLING_TAG" --repo "$REPO" --pattern "cli-version.txt" --dir "$tmp" --clobber
+resolve_version_from_tag() {
+  local tag="$1"
+  rm -rf "${tmp}/cli-version.txt"
+  if gh release download "$tag" --repo "$REPO" --pattern "cli-version.txt" --dir "$tmp" --clobber; then
+    if [[ -f "$tmp/cli-version.txt" ]]; then
+      tr -d '[:space:]' < "$tmp/cli-version.txt"
+      return 0
+    fi
+  fi
+  return 1
+}
 
-[[ -f "$tmp/cli-version.txt" ]] || { echo "cli-version.txt not found on ${ROLLING_TAG}" >&2; exit 1; }
-version="$(tr -d '[:space:]' < "$tmp/cli-version.txt")"
+version="$(resolve_version_from_tag "${ROLLING_TAG}")"
+
+if [[ -z "${version}" && "${ROLLING_TAG}" == "cli-unstable" ]]; then
+  echo "cli-unstable release not found; attempting stable fallback for version resolution" >&2
+  version="$(resolve_version_from_tag "cli-stable")"
+fi
+
+[[ -n "${version}" ]] || { echo "cli-version.txt not found on ${ROLLING_TAG}" >&2; exit 1; }
 # Fail closed: distribution may only consume the compiler-minted global SemVer.
 [[ "${version}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
   echo "${ROLLING_TAG} cli-version.txt is absent or not strict X.Y.Z semver: ${version:-<empty>}" >&2
