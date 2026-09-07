@@ -51,4 +51,14 @@ assert_contains "${workflow}" 'macos-dmg:'
 assert_contains "${workflow}" 'ubuntu-deb:'
 assert_contains "${workflow}" 'linux-snap:'
 
+# Classic confinement is a Store approval workflow for this compiler snap.
+# The operator guide must point at the forum request and a maintained draft,
+# rather than suggesting an unverified strict-confinement fallback.
+assert_file_exists "${root}/docs/Snap_Classic_Confinement_Request.md"
+assert_contains "${root}/docs/Snap_Guide.md" 'forum.snapcraft.io'
+if grep -Fq -- 'publish with `confinement: strict` temporarily' "${root}/docs/Snap_Guide.md"; then
+  echo "Snap guide must not advise an unverified strict-confinement fallback" >&2
+  exit 1
+fi
+
 printf 'Distribution static tests OK\n'

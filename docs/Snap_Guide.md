@@ -11,13 +11,16 @@ publishes it to the Snap Store with `canonical/action-publish@v1`.
    https://snapcraft.io/snaps → **Register a snap name** → `beskid`. The name
    must be free; if it is taken and unused, file a name-dispute request.
 
-2. **Set the snap to classic confinement.** Because Beskid ships prebuilt
-   glibc-linked binaries that need to run without confinement jail restrictions,
-   `snapcraft.yaml` declares `confinement: classic`. Classic confinement
-   requires manual review/permission from the Snap Store team. Request it on
-   the snap's page: **Settings → Edit → request classic confinement** with a
-   justification ("ships prebuilt native binaries"). Until approved, publish
-   with `confinement: strict` temporarily and switch once approved.
+2. **Request classic confinement in the forum.** `snapcraft.yaml` declares
+   `confinement: classic`, so the Snap Store will reject uploads until it has
+   approved this exact snap ID. Post the maintained
+   [classic-confinement request](./Snap_Classic_Confinement_Request.md) in
+   [Snapcraft Forum → Store requests](https://forum.snapcraft.io/c/store-requests/10),
+   using the publisher account that owns `beskid`. Link the resulting forum
+   post from the Snap Store review. Do not switch to strict confinement merely
+   to bypass review: the compiler must operate on arbitrary user projects and
+   run their produced executables, which has not been designed or verified
+   under strict confinement.
 
 3. **Verify the snap builds locally** (optional but recommended before CI):
    ```sh
