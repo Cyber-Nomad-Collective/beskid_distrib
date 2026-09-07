@@ -33,6 +33,8 @@ assert_contains "${root}/scripts/fetch-rolling-assets.sh" 'source "${ROOT}/targe
 # The Windows download is an EXE bootstrapper that chains the MSI.
 assert_contains "${root}/windows/beskid.bundle.wxs" '<Bundle'
 assert_contains "${root}/windows/beskid.bundle.wxs" '<MsiPackage SourceFile='
+assert_contains "${root}/windows/beskid.wxs" 'xmlns:ui='
+assert_contains "${root}/windows/beskid.wxs" '<ui:WixUI'
 
 # macOS users receive an application-style DMG in addition to Homebrew.
 assert_contains "${root}/macos/build-dmg.sh" 'hdiutil create'
@@ -43,6 +45,9 @@ assert_contains "${workflow}" 'Build Windows EXE bootstrapper'
 assert_contains "${workflow}" 'Build macOS DMG'
 assert_contains "${workflow}" 'beskid-${VERSION}-windows-amd64.exe'
 assert_contains "${workflow}" 'beskid-${VERSION}-macos-arm64.dmg'
+assert_contains "${workflow}" 'magick beskid_distrib/assets/icons/beskid-512.png'
+assert_contains "${workflow}" 'icon:auto-resize="256,128,96,64,48,32,16"'
+assert_contains "${workflow}" 'beskid_distrib/assets/icons/beskid.ico'
 
 # Workflow has 5 platform jobs (no AUR).
 assert_contains "${workflow}" 'windows-msi:'
@@ -60,5 +65,7 @@ if grep -Fq -- 'publish with `confinement: strict` temporarily' "${root}/docs/Sn
   echo "Snap guide must not advise an unverified strict-confinement fallback" >&2
   exit 1
 fi
+
+bash "${root}/tests/distribution-scripts.test.sh"
 
 printf 'Distribution static tests OK\n'

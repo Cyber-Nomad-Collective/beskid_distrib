@@ -11,6 +11,10 @@
 # release's target_commitish.
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=version.sh
+source "${ROOT}/version.sh"
+
 REPO="Cyber-Nomad-Collective/beskid_compiler"
 : "${GH_TOKEN:?GH_TOKEN must be exported (read on ${REPO})}"
 
@@ -36,17 +40,18 @@ resolve_version_from_tag() {
   return 1
 }
 
-version="$(resolve_version_from_tag "${ROLLING_TAG}")"
-
-if [[ -z "${version}" && "${ROLLING_TAG}" == "cli-unstable" ]]; then
+version=''
+if ! version="$(resolve_version_from_tag "${ROLLING_TAG}")"; then
+  if [[ "${ROLLING_TAG}" != "cli-unstable" ]]; then
+    echo "cli-version.txt not found on ${ROLLING_TAG}" >&2
+    exit 1
+  fi
   echo "cli-unstable release not found; attempting stable fallback for version resolution" >&2
   version="$(resolve_version_from_tag "cli-stable")"
 fi
 
 [[ -n "${version}" ]] || { echo "cli-version.txt not found on ${ROLLING_TAG}" >&2; exit 1; }
-# Fail closed: distribution may only consume the compiler-minted global SemVer.
-[[ "${version}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
-  echo "${ROLLING_TAG} cli-version.txt is absent or not strict X.Y.Z semver: ${version:-<empty>}" >&2
-  exit 1
-}
+# Fail closed: distribution may only consume the compiler-minted stable or
+# exact unstable version shape.
+validate_distribution_version "${version}"
 printf '%s' "${version}"

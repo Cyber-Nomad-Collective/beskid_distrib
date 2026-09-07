@@ -16,7 +16,8 @@
     Environment table / PATH: https://wixtoolset.org/docs/v3/xsd/wix/environment/
     WiX v4 CLI:               dotnet tool install -g wix  &&  wix build
 -->
-<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'>
+<Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'
+     xmlns:ui='http://wixtoolset.org/schemas/v4/wxs/ui'>
   <Package
     Name='Beskid'
     Manufacturer='Cyber Nomad Collective'
@@ -40,16 +41,10 @@
     <Property Id='ALLUSERS' Value='1' />
 
     <!--
-      Directory picker. The built-in WixUI_InstallDir dialog set lets the user
-      change INSTALLDIR; requires WixUIExtension in WiX v3, but in v4 the UI
-      is selected via <WixVariable> + the UI element below.
+      Directory picker. WiX v4 exposes WixUI_InstallDir through the UI
+      extension namespace loaded by build-msi.sh.
     -->
-    <Property Id='WIXUI_INSTALLDIR' Value='INSTALLDIR' />
-    <UI>
-      <UIRef Id='WixUI_InstallDir' />
-      <UIRef Id='WixUI_ErrorProgressText' />
-    </UI>
-    <WixVariable Id='WixUIInstallDir' Value='INSTALLDIR' />
+    <ui:WixUI Id='WixUI_InstallDir' InstallDirectory='INSTALLDIR' />
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFiles64Folder'>

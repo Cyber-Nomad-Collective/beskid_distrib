@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Build the Beskid Windows MSI with WiX v4.
 #
-# Installs WiX v4 as a dotnet global tool (idempotent), then runs
-# `wix build` against beskid.wxs with the version + build/assets dirs passed
-# as WiX variables.
+# Ensures the pinned WiX v4 CLI and UI extension are available, then runs
+# `wix build` against beskid.wxs with the numeric installer version plus the
+# build/assets directories passed as WiX variables.
 #
 # Usage: build-msi.sh <version> <build-dir> <assets-dir>
-#   version    resolved semver (e.g. 0.4.0)
+#   version    resolved release version (e.g. 0.4.0 or 0.4.1-unstable)
 #   build-dir  directory containing beskid.exe + beskid_lsp.exe (the fetched
 #              rolling release assets, renamed)
 #   assets-dir beskid_distrib/assets (for beskid.ico)
@@ -19,19 +19,26 @@ BUILD_DIR="${2:?build-dir (contains beskid.exe + beskid_lsp.exe)}"
 ASSETS_DIR="${3:?assets-dir (beskid_distrib/assets)}"
 
 DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=../scripts/version.sh
+source "${DISTRIB_ROOT}/scripts/version.sh"
+# shellcheck source=../scripts/wix-toolchain.sh
+source "${DISTRIB_ROOT}/scripts/wix-toolchain.sh"
 
-# WiX v4 dotnet tool. Add to PATH for this shell.
-dotnet tool install --global wix >/dev/null 2>&1 || true
-export PATH="$PATH:${HOME}/.dotnet/tools"
+validate_distribution_version "${VERSION}"
+WINDOWS_VERSION="$(windows_installer_version "${VERSION}")"
+
+load_wix_extension WixToolset.UI.wixext
 
 [[ -f "$BUILD_DIR/beskid.exe" ]] || { echo "Missing $BUILD_DIR/beskid.exe" >&2; exit 1; }
 [[ -f "$BUILD_DIR/beskid_lsp.exe" ]] || { echo "Missing $BUILD_DIR/beskid_lsp.exe" >&2; exit 1; }
+[[ -s "$ASSETS_DIR/icons/beskid.ico" ]] || { echo "Missing $ASSETS_DIR/icons/beskid.ico" >&2; exit 1; }
 
 out="beskid-${VERSION}-windows-amd64.msi"
 
 wix build \
   "${DISTRIB_ROOT}/windows/beskid.wxs" \
-  -d Version="${VERSION}" \
+  -ext "WixToolset.UI.wixext/${BESKID_WIX_VERSION}" \
+  -d Version="${WINDOWS_VERSION}" \
   -d BuildDir="${BUILD_DIR}" \
   -d AssetsDir="${ASSETS_DIR}" \
   -o "${out}"

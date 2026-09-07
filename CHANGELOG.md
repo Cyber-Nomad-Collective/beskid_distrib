@@ -13,4 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Accept canonical `X.Y.Z-unstable` compiler releases throughout immutable
+  asset resolution, project them to numeric Windows installer metadata without
+  changing public artifact names, and pin/load matching WiX UI and Burn
+  extensions for reproducible MSI and bootstrapper builds.
+
 - Corrected the Snap Store approval instructions; classic confinement requires a forum request and is not safely replaced by an unverified strict build.
