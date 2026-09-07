@@ -10,7 +10,6 @@ beskid_distrib/docker/
 # Build artifacts
 *.msi
 *.deb
-*.snap
 *.dmg
 beskid-*-amd64
 beskid-darwin-arm64

@@ -17,7 +17,6 @@ CI orchestration lives in the superrepo at
   rolling version + sha256 and pushed to `beskid_homebrew` by
   `homebrew-releaser`.
 - `deb/` — `dpkg-deb` control tree template + `build-deb.sh` for Ubuntu/Debian.
-- `snap/snapcraft.yaml` — Snapcraft definition (classic confinement).
 - `docker/` — Container images (generic + GitHub Actions runner).
 - `scripts/` — helpers to resolve the current version and fetch immutable
   `cli-v<version>` / `lsp-v<version>` release assets from `beskid_compiler`.
@@ -31,7 +30,6 @@ CI orchestration lives in the superrepo at
 | macOS `.dmg` | GitHub release on `beskid_compiler` (`cli-latest`, `cli-v<ver>`) |
 | macOS Homebrew | `Cyber-Nomad-Collective/beskid_homebrew` tap (`brew install beskid`) |
 | Ubuntu/Debian `.deb` | GitHub release on `beskid_compiler` (`cli-latest`, `cli-v<ver>`) |
-| Snap | Snap Store (`snap install beskid --classic`) |
 | Container images | `ghcr.io/cyber-nomad-collective/beskid` + `beskid-runner` |
 
 ## Trigger

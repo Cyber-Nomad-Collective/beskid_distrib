@@ -49,20 +49,23 @@ assert_contains "${workflow}" 'magick beskid_distrib/assets/icons/beskid-512.png
 assert_contains "${workflow}" 'icon:auto-resize="256,128,96,64,48,32,16"'
 assert_contains "${workflow}" 'beskid_distrib/assets/icons/beskid.ico'
 
-# Workflow has 5 platform jobs (no AUR).
+# Workflow retains supported platform jobs and rejects retired package lanes.
 assert_contains "${workflow}" 'windows-msi:'
 assert_contains "${workflow}" 'macos-brew:'
 assert_contains "${workflow}" 'macos-dmg:'
 assert_contains "${workflow}" 'ubuntu-deb:'
-assert_contains "${workflow}" 'linux-snap:'
-
-# Classic confinement is a Store approval workflow for this compiler snap.
-# The operator guide must point at the forum request and a maintained draft,
-# rather than suggesting an unverified strict-confinement fallback.
-assert_file_exists "${root}/docs/Snap_Classic_Confinement_Request.md"
-assert_contains "${root}/docs/Snap_Guide.md" 'forum.snapcraft.io'
-if grep -Fq -- 'publish with `confinement: strict` temporarily' "${root}/docs/Snap_Guide.md"; then
-  echo "Snap guide must not advise an unverified strict-confinement fallback" >&2
+assert_contains "${workflow}" 'container-images:'
+if grep -Eiq 'linux-snap|snapcraft|canonical/action-(build|publish)|SNAPCRAFT_STORE_CREDENTIALS' "${workflow}"; then
+  echo "retired Snap distribution must not remain in the workflow" >&2
+  exit 1
+fi
+if find "${root}" -type f \( -path '*/snap/*' -o -iname '*snap*' \) -print -quit | grep -q .; then
+  echo "retired Snap recipes or documentation remain in beskid_distrib" >&2
+  exit 1
+fi
+if grep -Riq -E 'snap store|snapcraft|snap install|linux-snap|SNAPCRAFT_STORE_CREDENTIALS' \
+  "${root}/README.md" "${root}/SECRETS.md" "${root}/docs"; then
+  echo "retired Snap claims or credentials remain in distribution documentation" >&2
   exit 1
 fi
 
