@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- License distribution tooling under Apache-2.0, declare the license across
+  Homebrew, Windows, Debian, DMG, and OCI metadata, and carry license notices
+  in packaged artifacts.
+
 ### Removed
 
 - Retire Snap distribution completely: remove its classic-confinement recipe,

@@ -6,6 +6,7 @@ set -euo pipefail
 VERSION="${1:?version (SemVer)}"
 BUILD_DIR="${2:?directory containing beskid and beskid_lsp}"
 ASSETS_DIR="${3:?assets directory}"
+DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 [[ -x "${BUILD_DIR}/beskid" ]] || { echo "Missing executable ${BUILD_DIR}/beskid" >&2; exit 1; }
 [[ -x "${BUILD_DIR}/beskid_lsp" ]] || { echo "Missing executable ${BUILD_DIR}/beskid_lsp" >&2; exit 1; }
@@ -22,6 +23,8 @@ mkdir -p "${macos}" "${resources}"
 cp "${BUILD_DIR}/beskid" "${macos}/beskid"
 cp "${BUILD_DIR}/beskid_lsp" "${macos}/beskid_lsp"
 cp "${ASSETS_DIR}/icons/beskid-512.png" "${resources}/beskid-512.png"
+cp "${DISTRIB_ROOT}/LICENSE" "${resources}/LICENSE.txt"
+cp "${DISTRIB_ROOT}/NOTICE" "${resources}/NOTICE.txt"
 chmod 0755 "${macos}/beskid" "${macos}/beskid_lsp"
 
 cat >"${contents}/Info.plist" <<EOF

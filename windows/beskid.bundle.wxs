@@ -9,7 +9,7 @@
     UpgradeCode='68111af0-f0f1-4d30-bcc3-c52ea3166819'>
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
-        LicenseUrl=''
+        LicenseUrl='https://www.apache.org/licenses/LICENSE-2.0'
         Theme='hyperlinkLicense'
         LogoFile='$(var.AssetsDir)\icons\beskid-512.png' />
     </BootstrapperApplication>

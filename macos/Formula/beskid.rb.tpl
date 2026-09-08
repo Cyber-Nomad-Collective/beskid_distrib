@@ -11,6 +11,7 @@
 class Beskid < Formula
   desc "Beskid compiler CLI (AOT, host composition)"
   homepage "https://beskid-lang.org"
+  license "Apache-2.0"
   url "https://github.com/Cyber-Nomad-Collective/beskid_compiler/releases/download/cli-v__VERSION__/beskid-darwin-arm64"
   version "__VERSION__"
   sha256 "__SHA256__"

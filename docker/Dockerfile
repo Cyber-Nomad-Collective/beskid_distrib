@@ -30,5 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=fetcher /beskid /usr/local/bin/beskid
+COPY beskid_distrib/LICENSE beskid_distrib/NOTICE /usr/share/licenses/beskid/
+
+LABEL org.opencontainers.image.source="https://github.com/Cyber-Nomad-Collective/beskid" \
+      org.opencontainers.image.description="Beskid compiler CLI" \
+      org.opencontainers.image.licenses="Apache-2.0"
 
 ENTRYPOINT ["beskid"]

@@ -210,6 +210,8 @@ grep -Fq 'wix extension add -g WixToolset.Bal.wixext/4.0.6' "${tmp}/wix.log" || 
   fail 'WiX Burn extension is not installed at the toolchain version'
 grep -Fq -- '-d Version=0.4.481 ' "${tmp}/wix.log" || \
   fail 'WiX did not receive the numeric unstable version projection'
+grep -Fq -- "-d DistribRoot=${root}" "${tmp}/wix.log" || \
+  fail 'WiX did not receive the distribution license source directory'
 if grep -Fq -- '-d Version=0.4.481-unstable' "${tmp}/wix.log"; then
   fail 'WiX received the public prerelease string as installer metadata'
 fi

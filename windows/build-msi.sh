@@ -41,6 +41,7 @@ wix build \
   -d Version="${WINDOWS_VERSION}" \
   -d BuildDir="${BUILD_DIR}" \
   -d AssetsDir="${ASSETS_DIR}" \
+  -d DistribRoot="${DISTRIB_ROOT}" \
   -o "${out}"
 
 echo "built ${out}"
