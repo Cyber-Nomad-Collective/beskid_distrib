@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Verify fetched compiler assets against the immutable release-state manifest and GitHub's
+  publisher-computed SHA-256 before exposing them to installer packaging, failing closed when
+  authority, membership, or checksum data is missing or mismatched.
 - Accept canonical `X.Y.Z-unstable` compiler releases throughout immutable
   asset resolution, project them to numeric Windows installer metadata without
   changing public artifact names, and pin/load matching WiX UI and Burn
