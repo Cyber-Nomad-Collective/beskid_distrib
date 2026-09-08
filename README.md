@@ -40,3 +40,9 @@ the matching immutable assets, wraps them into per-platform packages, and
 publishes both immutable assets and rolling aliases.
 
 See `docs/SECRETS.md` for the credentials required to run a full pipeline.
+
+## License
+
+Beskid-owned distribution tooling is licensed under the
+[Apache License 2.0](LICENSE). Packaged compiler binaries carry their own
+Apache-2.0 license and notice material.

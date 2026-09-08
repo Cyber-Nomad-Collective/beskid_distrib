@@ -11,6 +11,7 @@ FROM ghcr.io/cyber-nomad-collective/beskid:${BESKID_VERSION} AS beskid-base
 FROM debian:bookworm-slim
 
 COPY --from=beskid-base /usr/local/bin/beskid /usr/local/bin/beskid
+COPY beskid_distrib/LICENSE beskid_distrib/NOTICE /usr/share/licenses/beskid/
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
@@ -23,6 +24,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 LABEL org.opencontainers.image.source="https://github.com/Cyber-Nomad-Collective/beskid" \
       org.opencontainers.image.description="Beskid CLI with GitHub Actions runner tooling" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Apache-2.0"
 
 ENTRYPOINT ["beskid"]

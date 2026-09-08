@@ -1,0 +1,6 @@
+Beskid Distribution Tooling
+Copyright 2026 Cyber Nomad Collective
+
+Distribution artifacts assembled by this project include Beskid Compiler
+binaries. Those binaries are distributed under the Apache License 2.0 by the
+beskid_compiler project.

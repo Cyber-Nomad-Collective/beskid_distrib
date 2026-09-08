@@ -29,17 +29,17 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 PKGROOT="${STAGE}/beskid"
-mkdir -p "${PKGROOT}/usr/bin" "${PKGROOT}/DEBIAN"
+mkdir -p "${PKGROOT}/usr/bin" "${PKGROOT}/usr/share/doc/beskid" "${PKGROOT}/DEBIAN"
 
 # Binaries into /usr/bin (already on PATH on Debian/Ubuntu by default).
 cp -f "$CLI_BIN" "${PKGROOT}/usr/bin/beskid"
 cp -f "$LSP_BIN" "${PKGROOT}/usr/bin/beskid_lsp"
 chmod 0755 "${PKGROOT}/usr/bin/beskid" "${PKGROOT}/usr/bin/beskid_lsp"
+install -m0644 "${DISTRIB_ROOT}/LICENSE" "${PKGROOT}/usr/share/doc/beskid/copyright"
+install -m0644 "${DISTRIB_ROOT}/NOTICE" "${PKGROOT}/usr/share/doc/beskid/NOTICE"
 
 # Control tree: stamp version + installed-size, copy maintainer scripts.
-installed_kb=$(( ($(stat -c%s "${PKGROOT}/usr/bin/beskid" 2>/dev/null || stat -f%z "${PKGROOT}/usr/bin/beskid") \
-                + $(stat -c%s "${PKGROOT}/usr/bin/beskid_lsp" 2>/dev/null || stat -f%z "${PKGROOT}/usr/bin/beskid_lsp") \
-                + 1023) / 1024 ))
+installed_kb="$(du -sk "${PKGROOT}/usr" | awk '{print $1}')"
 
 sed -e "s/__VERSION__/${VERSION}/" \
     -e "s/__INSTALLED_SIZE_KB__/${installed_kb}/" \

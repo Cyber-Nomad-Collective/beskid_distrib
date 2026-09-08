@@ -33,12 +33,23 @@ assert_contains "${root}/scripts/fetch-rolling-assets.sh" 'source "${ROOT}/targe
 # The Windows download is an EXE bootstrapper that chains the MSI.
 assert_contains "${root}/windows/beskid.bundle.wxs" '<Bundle'
 assert_contains "${root}/windows/beskid.bundle.wxs" '<MsiPackage SourceFile='
+assert_contains "${root}/windows/beskid.bundle.wxs" "LicenseUrl='https://www.apache.org/licenses/LICENSE-2.0'"
 assert_contains "${root}/windows/beskid.wxs" 'xmlns:ui='
 assert_contains "${root}/windows/beskid.wxs" '<ui:WixUI'
+assert_contains "${root}/windows/beskid.wxs" 'DistribRoot)\LICENSE'
 
 # macOS users receive an application-style DMG in addition to Homebrew.
 assert_contains "${root}/macos/build-dmg.sh" 'hdiutil create'
 assert_contains "${root}/macos/build-dmg.sh" 'beskid_lsp'
+assert_contains "${root}/macos/build-dmg.sh" 'NOTICE.txt'
+
+# Every supported package surface declares and carries the Apache-2.0 license.
+assert_file_exists "${root}/LICENSE"
+assert_file_exists "${root}/NOTICE"
+assert_contains "${root}/macos/Formula/beskid.rb.tpl" 'license "Apache-2.0"'
+assert_contains "${root}/docker/Dockerfile" 'org.opencontainers.image.licenses="Apache-2.0"'
+assert_contains "${root}/docker/Dockerfile.runner" 'org.opencontainers.image.licenses="Apache-2.0"'
+assert_contains "${root}/deb/build-deb.sh" '/usr/share/doc/beskid/copyright'
 
 # Workflow publishes the new platform artifacts to the immutable release.
 assert_contains "${workflow}" 'Build Windows EXE bootstrapper'
