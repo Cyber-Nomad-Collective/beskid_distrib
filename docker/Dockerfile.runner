@@ -3,15 +3,15 @@
 # This image is meant for CI runners that need beskid + curl, jq, git etc.
 # to interact with GitHub APIs and perform distribution tasks.
 
-ARG BESKID_VERSION=stable
-
-FROM ghcr.io/cyber-nomad-collective/beskid:${BESKID_VERSION} AS beskid-base
+ARG BESKID_BASE_IMAGE=ghcr.io/cyber-nomad-collective/beskid:stable
+FROM ${BESKID_BASE_IMAGE} AS beskid-base
 
 # Real stage inherits the beskid binary and adds CI tooling.
 FROM debian:bookworm-slim
 
-COPY --from=beskid-base /usr/local/bin/beskid /usr/local/bin/beskid
-COPY beskid_distrib/LICENSE beskid_distrib/NOTICE /usr/share/licenses/beskid/
+COPY --from=beskid-base /opt/beskid /opt/beskid
+COPY LICENSE NOTICE /usr/share/licenses/beskid/
+ENV PATH="/opt/beskid/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       && rm -rf /var/lib/apt/lists/*
 
 LABEL org.opencontainers.image.source="https://github.com/Cyber-Nomad-Collective/beskid" \
-      org.opencontainers.image.description="Beskid CLI with GitHub Actions runner tooling" \
+      org.opencontainers.image.description="Beskid compiler toolchain with GitHub Actions runner tooling" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 ENTRYPOINT ["beskid"]

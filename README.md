@@ -1,7 +1,7 @@
 # beskid_distrib
 
 Platform-specific packaging recipes, assets, and guides for the Beskid
-compiler CLI/LSP. This repository is a **content-only submodule** of the
+compiler toolchain. This repository is a **content-only submodule** of the
 [`beskid`](https://github.com/Cyber-Nomad-Collective/beskid) superrepo — the
 CI orchestration lives in the superrepo at
 `.github/workflows/distribute.yml`, not here.
@@ -19,7 +19,7 @@ CI orchestration lives in the superrepo at
 - `deb/` — `dpkg-deb` control tree template + `build-deb.sh` for Ubuntu/Debian.
 - `docker/` — Container images (generic + GitHub Actions runner).
 - `scripts/` — helpers to resolve the current version and fetch immutable
-  `cli-v<version>` / `lsp-v<version>` release assets from `beskid_compiler`.
+  verified `v<version>` target bundles from `beskid_compiler`.
 - `docs/` — per-platform guides for obtaining CI secrets, plus `SECRETS.md`.
 
 ## Where packages publish
@@ -38,6 +38,12 @@ The distrib pipeline runs in the superrepo on `workflow_run` of the `Compiler`
 workflow. It uses the rolling aliases only to discover the version, fetches
 the matching immutable assets, wraps them into per-platform packages, and
 publishes both immutable assets and rolling aliases.
+
+Every supported package preserves one install prefix: `bin/`,
+`lib/beskid-runtime/abi-5/`, `beskid_corelib/`, `packages/`, and
+`release-version.txt`. The CLI derives the runtime kit and corelib from its
+own executable under `<prefix>/bin`, so installed packages and OCI images do
+not require `BESKID_RUNTIME_PREFIX` or `BESKID_CORELIB_ROOT`.
 
 See `docs/SECRETS.md` for the credentials required to run a full pipeline.
 

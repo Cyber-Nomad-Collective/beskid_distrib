@@ -34,9 +34,11 @@ asset_content="${FAKE_ASSET_CONTENT:-verified compiler asset}"
 asset_name="${FAKE_EXPECTED_ASSET:-beskid-linux-amd64}"
 asset_digest() {
   if command -v sha256sum >/dev/null 2>&1; then
-    printf '%s' "${asset_content}" | sha256sum | awk '{print $1}'
+    if [[ -n "${FAKE_ASSET_FILE:-}" ]]; then sha256sum "${FAKE_ASSET_FILE}" | awk '{print $1}'
+    else printf '%s' "${asset_content}" | sha256sum | awk '{print $1}'; fi
   else
-    printf '%s' "${asset_content}" | shasum -a 256 | awk '{print $1}'
+    if [[ -n "${FAKE_ASSET_FILE:-}" ]]; then shasum -a 256 "${FAKE_ASSET_FILE}" | awk '{print $1}'
+    else printf '%s' "${asset_content}" | shasum -a 256 | awk '{print $1}'; fi
   fi
 }
 if [[ "$1" == 'api' ]]; then
@@ -71,7 +73,8 @@ if [[ "$1 $2" == 'release download' ]]; then
   elif [[ "${pattern}" == 'cli-version.txt' ]]; then
     printf '%s\n' "${FAKE_RELEASE_VERSION}" >"${output_dir}/${pattern}"
   else
-    printf '%s' "${asset_content}" >"${output_dir}/${pattern}"
+    if [[ -n "${FAKE_ASSET_FILE:-}" ]]; then cp "${FAKE_ASSET_FILE}" "${output_dir}/${pattern}"
+    else printf '%s' "${asset_content}" >"${output_dir}/${pattern}"; fi
   fi
 fi
 SH
@@ -183,8 +186,86 @@ fallback="$({
 })"
 [[ "${fallback}" == '0.4.480' ]] || fail "unstable rolling fallback did not resolve stable: ${fallback}"
 
-: >"${tmp}/windows-build/beskid.exe"
-: >"${tmp}/windows-build/beskid_lsp.exe"
+# Distribution adapters consume the complete compiler-owned target bundle.
+# Extraction validates the exact release identity and required no-env prefix
+# layout before making any files visible at the destination.
+bundle_root="${tmp}/bundle-source/beskid-0.4.481-x86_64-unknown-linux-gnu"
+mkdir -p \
+  "${bundle_root}/bin" \
+  "${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release" \
+  "${bundle_root}/beskid_corelib" \
+  "${bundle_root}/packages/foundation"
+printf 'cli' >"${bundle_root}/bin/beskid"
+printf 'lsp' >"${bundle_root}/bin/beskid_lsp"
+printf 'updater' >"${bundle_root}/bin/beskid-up"
+printf '{}\n' >"${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release/abi.json"
+printf 'project { name = "corelib" }\n' >"${bundle_root}/beskid_corelib/corelib.bproj"
+printf 'project { name = "corelib_foundation" }\n' >"${bundle_root}/packages/foundation/corelib_foundation.bproj"
+printf '0.4.481\n' >"${bundle_root}/release-version.txt"
+tar -C "${tmp}/bundle-source" -czf "${tmp}/valid-bundle.tar.gz" "$(basename "${bundle_root}")"
+
+PATH="${tmp}/bin:${PATH}" FAKE_GH_LOG="${tmp}/gh.log" \
+  FAKE_RELEASE_VERSION=0.4.481 \
+  FAKE_EXPECTED_ASSET=beskid-x86_64-unknown-linux-gnu.tar.gz \
+  FAKE_ASSET_FILE="${tmp}/valid-bundle.tar.gz" GH_TOKEN=test \
+  bash "${root}/scripts/fetch-release-bundle.sh" \
+    0.4.481 x86_64-unknown-linux-gnu "${tmp}/fetched-bundle"
+[[ -f "${tmp}/fetched-bundle/beskid_corelib/corelib.bproj" ]] || \
+  fail 'verified bundle fetch did not expose the complete target bundle'
+grep -Fq 'release download v0.4.481' "${tmp}/gh.log" || \
+  fail 'bundle fetch did not use the immutable complete-bundle release'
+
+bash "${root}/scripts/extract-release-bundle.sh" \
+  "${tmp}/valid-bundle.tar.gz" 0.4.481 x86_64-unknown-linux-gnu "${tmp}/extracted"
+for required in \
+  bin/beskid bin/beskid_lsp bin/beskid-up \
+  lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release/abi.json \
+  beskid_corelib/corelib.bproj packages/foundation/corelib_foundation.bproj \
+  release-version.txt; do
+  [[ -f "${tmp}/extracted/${required}" ]] || fail "bundle extraction omitted ${required}"
+done
+
+cp "${tmp}/valid-bundle.tar.gz" "${tmp}/invalid-bundle.tar.gz"
+printf '0.4.999\n' >"${bundle_root}/release-version.txt"
+tar -C "${tmp}/bundle-source" -czf "${tmp}/invalid-bundle.tar.gz" "$(basename "${bundle_root}")"
+if bash "${root}/scripts/extract-release-bundle.sh" \
+  "${tmp}/invalid-bundle.tar.gz" 0.4.481 x86_64-unknown-linux-gnu "${tmp}/rejected"; then
+  fail 'bundle extraction accepted a mismatched release-version marker'
+fi
+[[ ! -e "${tmp}/rejected" ]] || fail 'invalid bundle escaped its extraction staging directory'
+
+# A verified checksum authenticates bytes, not archive topology. Reject links
+# before extraction so a malformed release bundle cannot write through a link
+# outside the atomic staging directory.
+printf '0.4.481\n' >"${bundle_root}/release-version.txt"
+ln -s /tmp "${bundle_root}/packages/escape-link"
+tar -C "${tmp}/bundle-source" -czf "${tmp}/linked-bundle.tar.gz" "$(basename "${bundle_root}")"
+if bash "${root}/scripts/extract-release-bundle.sh" \
+  "${tmp}/linked-bundle.tar.gz" 0.4.481 x86_64-unknown-linux-gnu "${tmp}/linked-rejected"; then
+  fail 'bundle extraction accepted a symbolic link'
+fi
+[[ ! -e "${tmp}/linked-rejected" ]] || fail 'linked bundle escaped extraction staging'
+rm "${bundle_root}/packages/escape-link"
+
+mkdir -p \
+  "${tmp}/windows-build/bin" \
+  "${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/release" \
+  "${tmp}/windows-build/beskid_corelib" \
+  "${tmp}/windows-build/packages"
+: >"${tmp}/windows-build/bin/beskid.exe"
+: >"${tmp}/windows-build/bin/beskid_lsp.exe"
+: >"${tmp}/windows-build/bin/beskid-up.exe"
+: >"${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/release/abi.json"
+: >"${tmp}/windows-build/beskid_corelib/corelib.bproj"
+
+node "${root}/windows/render-bundle-fragment.mjs" \
+  "${tmp}/windows-build" "${tmp}/windows-build/bundle-files.wxs"
+grep -Fq 'ComponentGroup Id="BundleFiles"' "${tmp}/windows-build/bundle-files.wxs" || \
+  fail 'Windows bundle fragment omitted its component group'
+grep -Fq 'Name="beskid.exe"' "${tmp}/windows-build/bundle-files.wxs" || \
+  fail 'Windows bundle fragment omitted the CLI'
+grep -Fq 'Name="abi.json"' "${tmp}/windows-build/bundle-files.wxs" || \
+  fail 'Windows bundle fragment omitted the runtime kit'
 printf 'ico' >"${tmp}/assets/icons/beskid.ico"
 printf 'png' >"${tmp}/assets/icons/beskid-512.png"
 

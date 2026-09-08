@@ -30,6 +30,24 @@ assert_file_exists "${root}/scripts/target-map.sh"
 assert_contains "${root}/scripts/fetch-release-assets.sh" 'source "${ROOT}/target-map.sh"'
 assert_contains "${root}/scripts/fetch-rolling-assets.sh" 'source "${ROOT}/target-map.sh"'
 
+# Every distribution surface consumes the compiler-owned complete target
+# bundle through one fail-closed extraction seam.
+assert_file_exists "${root}/scripts/fetch-release-bundle.sh"
+assert_file_exists "${root}/scripts/extract-release-bundle.sh"
+assert_contains "${root}/scripts/fetch-release-bundle.sh" 'source "${ROOT}/release-asset-authority.sh"'
+assert_contains "${root}/scripts/fetch-release-bundle.sh" 'tag="v${VERSION}"'
+assert_contains "${root}/scripts/fetch-release-bundle.sh" 'extract-release-bundle.sh'
+assert_file_exists "${root}/windows/render-bundle-fragment.mjs"
+assert_contains "${root}/windows/build-msi.sh" 'render-bundle-fragment.mjs'
+assert_contains "${root}/windows/beskid.wxs" '<ComponentGroupRef Id='
+assert_contains "${root}/macos/build-dmg.sh" 'cp -a "${BUILD_DIR}/." "${toolchain}/"'
+assert_contains "${root}/deb/build-deb.sh" 'cp -a "${BUILD_DIR}/lib" "${PKGROOT}/usr/lib"'
+assert_contains "${root}/deb/build-deb.sh" 'cp -a "${BUILD_DIR}/beskid_corelib" "${PKGROOT}/usr/beskid_corelib"'
+assert_contains "${root}/deb/build-deb.sh" 'cp -a "${BUILD_DIR}/packages" "${PKGROOT}/usr/packages"'
+assert_contains "${root}/macos/Formula/beskid.rb.tpl" 'libexec.install "bin", "lib", "beskid_corelib", "packages", "release-version.txt"'
+assert_contains "${root}/docker/Dockerfile" 'COPY oci-build/beskid-bundle/ /opt/beskid/'
+assert_contains "${root}/docker/Dockerfile.runner" 'COPY --from=beskid-base /opt/beskid /opt/beskid'
+
 # The Windows download is an EXE bootstrapper that chains the MSI.
 assert_contains "${root}/windows/beskid.bundle.wxs" '<Bundle'
 assert_contains "${root}/windows/beskid.bundle.wxs" '<MsiPackage SourceFile='
@@ -59,6 +77,10 @@ assert_contains "${workflow}" 'beskid-${VERSION}-macos-arm64.dmg'
 assert_contains "${workflow}" 'magick beskid_distrib/assets/icons/beskid-512.png'
 assert_contains "${workflow}" 'icon:auto-resize="256,128,96,64,48,32,16"'
 assert_contains "${workflow}" 'beskid_distrib/assets/icons/beskid.ico'
+assert_contains "${workflow}" 'fetch-release-bundle.sh'
+assert_contains "${workflow}" 'Setup Node.js (for deterministic WiX bundle harvesting)'
+assert_contains "${workflow}" 'context: beskid_distrib'
+assert_contains "${workflow}" 'oci-build/beskid-bundle'
 
 # Workflow retains supported platform jobs and rejects retired package lanes.
 assert_contains "${workflow}" 'windows-msi:'

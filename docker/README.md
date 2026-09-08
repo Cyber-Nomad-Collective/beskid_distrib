@@ -7,7 +7,7 @@ Pre-built container images for the Beskid CLI, published to GitHub Container Reg
 
 | Image | Description |
 |---|---|
-| `beskid:stable` / `beskid:unstable` | Minimal runtime — just the `beskid` binary on Debian Bookworm Slim. |
+| `beskid:stable` / `beskid:unstable` | Complete no-env toolchain bundle on Debian Bookworm Slim. |
 | `beskid:<version>` | Pinned release (e.g. `beskid:0.5.2`). |
 | `beskid-runner:stable` / `beskid-runner:unstable` | Beskid + curl, jq, git, unzip, gnupg — for GitHub Actions and CI. |
 
@@ -23,6 +23,11 @@ docker run -v $(pwd):/workspace ghcr.io/cyber-nomad-collective/beskid:stable bui
 # Pin a specific version
 docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
 ```
+
+The complete verified target bundle is installed at `/opt/beskid`. Its
+`bin`, ABI-v5 runtime kit, corelib, packages, and version marker remain under
+that single prefix; no Beskid runtime/corelib environment variables are
+required.
 
 ## GitHub Actions
 

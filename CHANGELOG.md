@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Build MSI, DMG, Debian, Homebrew, and OCI distributions from the immutable
+  verified target bundle, preserving the complete no-environment-variable
+  install prefix with CLI, LSP, updater, ABI-v5 runtime kit, corelib, and
+  bundled packages.
 - License distribution tooling under Apache-2.0, declare the license across
   Homebrew, Windows, Debian, DMG, and OCI metadata, and carry license notices
   in packaged artifacts.
@@ -21,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Reject links and special files before extracting an authenticated compiler
+  bundle so archive topology cannot escape the atomic staging directory.
+- Correct OCI build contexts and copy the verified toolchain prefix into both
+  the base and runner images instead of downloading an unverified bare CLI
+  during the image build.
 - Verify fetched compiler assets against the immutable release-state manifest and GitHub's
   publisher-computed SHA-256 before exposing them to installer packaging, failing closed when
   authority, membership, or checksum data is missing or mismatched.

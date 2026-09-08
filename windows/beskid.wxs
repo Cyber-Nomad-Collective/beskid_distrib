@@ -3,8 +3,8 @@
   Beskid Windows Installer (WiX v4).
 
   Builds an MSI that:
-    - installs beskid.exe (CLI) + beskid_lsp.exe (LSP) into Program Files\Beskid
-    - adds Program Files\Beskid to the system PATH (reboot-persistent, via the
+    - installs the complete verified target bundle into Program Files\Beskid
+    - adds Program Files\Beskid\bin to the system PATH (reboot-persistent, via the
       MSI Environment table)
     - registers an uninstall entry (Add/Remove Programs) with version + publisher
     - shows a directory-picker dialog so the user can change the install path
@@ -49,12 +49,6 @@
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFiles64Folder'>
         <Directory Id='INSTALLDIR' Name='Beskid'>
-          <Component Id='BeskidCli' Guid='a1b2c3d4-0001-4000-8000-000000000001'>
-            <File Id='BeskidExe' Source='$(var.BuildDir)\beskid.exe' KeyPath='yes' />
-          </Component>
-          <Component Id='BeskidLsp' Guid='a1b2c3d4-0001-4000-8000-000000000002'>
-            <File Id='BeskidLspExe' Source='$(var.BuildDir)\beskid_lsp.exe' KeyPath='yes' />
-          </Component>
           <Component Id='BeskidLicense' Guid='a1b2c3d4-0001-4000-8000-000000000004'>
             <File Id='BeskidLicenseFile' Name='LICENSE.txt' Source='$(var.DistribRoot)\LICENSE' KeyPath='yes' />
           </Component>
@@ -66,7 +60,7 @@
             <Environment
               Id='PATH'
               Name='PATH'
-              Value='[INSTALLDIR]'
+              Value='[INSTALLDIR]bin'
               Permanent='no'
               Part='last'
               Action='set'
@@ -82,8 +76,7 @@
     </Directory>
 
     <Feature Id='Complete' Title='Beskid' Level='1'>
-      <ComponentRef Id='BeskidCli' />
-      <ComponentRef Id='BeskidLsp' />
+      <ComponentGroupRef Id='BundleFiles' />
       <ComponentRef Id='BeskidLicense' />
       <ComponentRef Id='BeskidNotice' />
       <ComponentRef Id='BeskidPath' />
