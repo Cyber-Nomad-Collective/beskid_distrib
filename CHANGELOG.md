@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Build the Windows installer explicitly for x64 with WiX v4 package metadata,
+  a single per-machine scope, UTF-8 sources, and a valid downgrade message.
 - Accept canonical `X.Y.Z-unstable` compiler releases throughout immutable
   asset resolution, project them to numeric Windows installer metadata without
   changing public artifact names, and pin/load matching WiX UI and Burn

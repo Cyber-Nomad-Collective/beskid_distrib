@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='windows-1252'?>
+<?xml version='1.0' encoding='utf-8'?>
 <!-- WiX Burn bootstrapper: the downloadable Windows .exe chains the MSI. -->
 <Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'
      xmlns:bal='http://wixtoolset.org/schemas/v4/wxs/bal'>
