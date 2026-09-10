@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Build the Windows MSI explicitly as x64, use WiX v4-compatible UTF-8 and
+  summary metadata, and remove the invalid downgrade-message format token and
+  duplicate per-machine property so standard MSI validation passes.
 - Accept canonical `X.Y.Z-unstable` compiler releases throughout immutable
   asset resolution, project them to numeric Windows installer metadata without
   changing public artifact names, and pin/load matching WiX UI and Burn

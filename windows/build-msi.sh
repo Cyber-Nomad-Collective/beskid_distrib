@@ -37,6 +37,7 @@ out="beskid-${VERSION}-windows-amd64.msi"
 
 wix build \
   "${DISTRIB_ROOT}/windows/beskid.wxs" \
+  -arch x64 \
   -ext "WixToolset.UI.wixext/${BESKID_WIX_VERSION}" \
   -d Version="${WINDOWS_VERSION}" \
   -d BuildDir="${BUILD_DIR}" \

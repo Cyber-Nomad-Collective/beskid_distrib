@@ -81,5 +81,6 @@ if grep -Riq -E 'snap store|snapcraft|snap install|linux-snap|SNAPCRAFT_STORE_CR
 fi
 
 bash "${root}/tests/distribution-scripts.test.sh"
+bash "${root}/tests/windows-wix-contract.test.sh"
 
 printf 'Distribution static tests OK\n'
