@@ -14,6 +14,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 source "${ROOT}/target-map.sh"
+# shellcheck source=release-asset-authority.sh
+source "${ROOT}/release-asset-authority.sh"
 
 STREAM="${1:?stream (cli | lsp)}"
 TARGET="${2:?target triple}"
@@ -36,10 +38,10 @@ fi
 tag="$ROLLING_TAG"
 
 echo "Fetching ${asset} from ${REPO}@${tag}..."
-gh release download "$tag" --repo "$REPO" --pattern "$asset" --clobber
+destination="${OUT_NAME:-${asset}}"
+fetch_verified_release_asset "${REPO}" "${tag}" "" "${asset}" "${destination}"
 
-if [[ -n "$OUT_NAME" && "$OUT_NAME" != "$asset" ]]; then
-  mv -f "$asset" "$OUT_NAME"
+if [[ "${destination}" != "${asset}" ]]; then
   echo "Saved as ${OUT_NAME}"
 else
   echo "Saved ${asset}"

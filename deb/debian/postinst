@@ -6,7 +6,7 @@
 # a friendly install confirmation.
 set -e
 
-chmod 0755 /usr/bin/beskid /usr/bin/beskid_lsp 2>/dev/null || true
+chmod 0755 /usr/bin/beskid /usr/bin/beskid_lsp /usr/bin/beskid-up 2>/dev/null || true
 
 cat <<'EOF'
 

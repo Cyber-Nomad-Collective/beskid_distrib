@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the Beskid .deb package by wrapping the prebuilt CLI + LSP binaries.
+# Build the Beskid .deb package from the verified full target bundle.
 #
 # This does NOT rebuild from Cargo (cargo-deb is the wrong tool for that reason:
 # the distrib pipeline consumes already-built release assets). Instead it
@@ -9,20 +9,25 @@
 #
 # Usage: build-deb.sh <version> <build-dir>
 #   version    resolved semver (e.g. 0.4.0)
-#   build-dir  directory containing beskid (linux-amd64) + beskid_lsp (linux-amd64)
+#   build-dir  verified target bundle root (bin + ABI-v5 lib + corelib/packages)
 #
 # Output: beskid-<version>-amd64.deb in the caller's CWD.
 set -euo pipefail
 
 VERSION="${1:?version (semver)}"
-BUILD_DIR="${2:?build-dir (contains the fetched linux-amd64 binaries)}"
+BUILD_DIR="${2:?build-dir (verified target bundle root)}"
 
 DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-CLI_BIN="${BUILD_DIR}/beskid-linux-amd64"
-LSP_BIN="${BUILD_DIR}/beskid_lsp-linux-amd64"
+CLI_BIN="${BUILD_DIR}/bin/beskid"
+LSP_BIN="${BUILD_DIR}/bin/beskid_lsp"
+UP_BIN="${BUILD_DIR}/bin/beskid-up"
 [[ -f "$CLI_BIN" ]] || { echo "Missing $CLI_BIN" >&2; exit 1; }
 [[ -f "$LSP_BIN" ]] || { echo "Missing $LSP_BIN" >&2; exit 1; }
+[[ -f "$UP_BIN" ]] || { echo "Missing $UP_BIN" >&2; exit 1; }
+[[ -d "${BUILD_DIR}/lib/beskid-runtime/abi-5" ]] || { echo "Missing ABI-v5 runtime kit" >&2; exit 1; }
+[[ -f "${BUILD_DIR}/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
+[[ -d "${BUILD_DIR}/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
 
 # Assemble the package tree under a clean staging dir.
 STAGE="$(mktemp -d)"
@@ -32,9 +37,12 @@ PKGROOT="${STAGE}/beskid"
 mkdir -p "${PKGROOT}/usr/bin" "${PKGROOT}/usr/share/doc/beskid" "${PKGROOT}/DEBIAN"
 
 # Binaries into /usr/bin (already on PATH on Debian/Ubuntu by default).
-cp -f "$CLI_BIN" "${PKGROOT}/usr/bin/beskid"
-cp -f "$LSP_BIN" "${PKGROOT}/usr/bin/beskid_lsp"
-chmod 0755 "${PKGROOT}/usr/bin/beskid" "${PKGROOT}/usr/bin/beskid_lsp"
+cp -a "${BUILD_DIR}/bin/." "${PKGROOT}/usr/bin/"
+cp -a "${BUILD_DIR}/lib" "${PKGROOT}/usr/lib"
+cp -a "${BUILD_DIR}/beskid_corelib" "${PKGROOT}/usr/beskid_corelib"
+cp -a "${BUILD_DIR}/packages" "${PKGROOT}/usr/packages"
+cp -a "${BUILD_DIR}/release-version.txt" "${PKGROOT}/usr/release-version.txt"
+chmod 0755 "${PKGROOT}/usr/bin/beskid" "${PKGROOT}/usr/bin/beskid_lsp" "${PKGROOT}/usr/bin/beskid-up"
 install -m0644 "${DISTRIB_ROOT}/LICENSE" "${PKGROOT}/usr/share/doc/beskid/copyright"
 install -m0644 "${DISTRIB_ROOT}/NOTICE" "${PKGROOT}/usr/share/doc/beskid/NOTICE"
 

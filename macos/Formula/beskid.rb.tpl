@@ -2,7 +2,7 @@
 #
 # Rendered by the macos-brew CI job with:
 #   __VERSION__  -> immutable release semver
-#   __SHA256__   -> sha256 of the darwin-arm64 CLI release asset
+#   __SHA256__   -> sha256 of the complete darwin-arm64 target bundle
 #
 # The rendered file is committed to Cyber-Nomad-Collective/beskid_homebrew
 # by Justintime50/homebrew-releaser. We render it ourselves (rather than letting
@@ -12,7 +12,7 @@ class Beskid < Formula
   desc "Beskid compiler CLI (AOT, host composition)"
   homepage "https://beskid-lang.org"
   license "Apache-2.0"
-  url "https://github.com/Cyber-Nomad-Collective/beskid_compiler/releases/download/cli-v__VERSION__/beskid-darwin-arm64"
+  url "https://github.com/Cyber-Nomad-Collective/beskid_compiler/releases/download/v__VERSION__/beskid-aarch64-apple-darwin.tar.gz"
   version "__VERSION__"
   sha256 "__SHA256__"
 
@@ -29,8 +29,10 @@ class Beskid < Formula
   end
 
   def install
-    # The release asset is a bare Mach-O binary named beskid-darwin-arm64.
-    bin.install "beskid-darwin-arm64" => "beskid"
+    libexec.install "bin", "lib", "beskid_corelib", "packages", "release-version.txt"
+    bin.write_exec_script libexec/"bin/beskid"
+    bin.write_exec_script libexec/"bin/beskid_lsp"
+    bin.write_exec_script libexec/"bin/beskid-up"
   end
 
   test do
