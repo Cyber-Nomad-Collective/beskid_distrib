@@ -1,10 +1,13 @@
 # Installer assets
 
 Branding used by the per-platform installers. All assets are derived from the
-canonical Beskid logos living in the `beskid_vscode` submodule:
+canonical Ridge geometry in `site/beskid_brand` in the parent checkout:
 
-- `beskid-logo.svg` — copy of `beskid_vscode/media/beskid-logo.svg` (source).
-- `beskid-512.png` — copy of `beskid_vscode/icon.png` (512×512 source raster).
+- `beskid-logo.svg` — generated Emerald Ridge SVG.
+- `beskid-512.png` — generated 512×512 Ridge raster.
+
+Regenerate checked-in artwork from the parent checkout with
+`pnpm --dir site/beskid_brand sync:assets`.
 
 ## Regenerating derived formats
 

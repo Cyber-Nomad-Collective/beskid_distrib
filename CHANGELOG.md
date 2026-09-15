@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Use canonical Emerald Ridge artwork for installer SVG and PNG assets.
+
 - Build MSI, DMG, Debian, Homebrew, and OCI distributions from the immutable
   verified target bundle, preserving the complete no-environment-variable
   install prefix with CLI, LSP, updater, ABI-v5 runtime kit, corelib, and
