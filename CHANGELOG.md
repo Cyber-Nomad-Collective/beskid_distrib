@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Check native package and immutable release contracts against Woodpecker build,
+  packaging, and publication authority after retirement of the GitHub workflow.
+
 - Use canonical Emerald Ridge artwork for installer SVG and PNG assets.
 
 - Build MSI, DMG, Debian, Homebrew, and OCI distributions from the immutable

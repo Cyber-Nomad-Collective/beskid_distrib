@@ -2,7 +2,10 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-workflow="${root}/../.github/workflows/distribute.yml"
+ci="${root}/../scripts/ci"
+workflows="${root}/../.woodpecker"
+packager="${ci}/woodpecker-package-platform.mjs"
+publisher="${ci}/woodpecker-release.sh"
 
 assert_contains() {
   local file="$1" needle="$2"
@@ -69,27 +72,33 @@ assert_contains "${root}/docker/Dockerfile" 'org.opencontainers.image.licenses="
 assert_contains "${root}/docker/Dockerfile.runner" 'org.opencontainers.image.licenses="Apache-2.0"'
 assert_contains "${root}/deb/build-deb.sh" '/usr/share/doc/beskid/copyright'
 
-# Workflow publishes the new platform artifacts to the immutable release.
-assert_contains "${workflow}" 'Build Windows EXE bootstrapper'
-assert_contains "${workflow}" 'Build macOS DMG'
-assert_contains "${workflow}" 'beskid-${VERSION}-windows-amd64.exe'
-assert_contains "${workflow}" 'beskid-${VERSION}-macos-arm64.dmg'
-assert_contains "${workflow}" 'magick beskid_distrib/assets/icons/beskid-512.png'
-assert_contains "${workflow}" 'icon:auto-resize="256,128,96,64,48,32,16"'
-assert_contains "${workflow}" 'beskid_distrib/assets/icons/beskid.ico'
-assert_contains "${workflow}" 'fetch-release-bundle.sh'
-assert_contains "${workflow}" 'Setup Node.js (for deterministic WiX bundle harvesting)'
-assert_contains "${workflow}" 'context: beskid_distrib'
-assert_contains "${workflow}" 'oci-build/beskid-bundle'
-
-# Workflow retains supported platform jobs and rejects retired package lanes.
-assert_contains "${workflow}" 'windows-msi:'
-assert_contains "${workflow}" 'macos-brew:'
-assert_contains "${workflow}" 'macos-dmg:'
-assert_contains "${workflow}" 'ubuntu-deb:'
-assert_contains "${workflow}" 'container-images:'
-if grep -Eiq 'linux-snap|snapcraft|canonical/action-(build|publish)|SNAPCRAFT_STORE_CREDENTIALS' "${workflow}"; then
-  echo "retired Snap distribution must not remain in the workflow" >&2
+# Woodpecker native workers package verified bundles; release publication has
+# one separate, explicitly enabled authority. OCI recipes remain checked above.
+assert_file_exists "${packager}"
+assert_file_exists "${publisher}"
+for platform in linux macos windows; do
+  assert_contains "${workflows}/${platform}.yml" "woodpecker-build-platform.sh ${platform}"
+  assert_contains "${workflows}/${platform}.yml" "woodpecker-package-platform.mjs ${platform}"
+done
+assert_contains "${workflows}/release.yml" 'woodpecker-release.sh'
+assert_contains "${packager}" 'woodpecker-release-evidence.mjs'
+assert_contains "${packager}" 'scripts/extract-release-bundle.sh'
+assert_contains "${packager}" 'windows/build-msi.sh'
+assert_contains "${packager}" 'windows/build-exe.sh'
+assert_contains "${packager}" 'macos/build-dmg.sh'
+assert_contains "${packager}" 'macos/Formula/beskid.rb.tpl'
+assert_contains "${packager}" 'deb/build-deb.sh'
+assert_contains "${packager}" 'assets/icons/beskid-512.png'
+assert_contains "${packager}" 'icon:auto-resize=256,128,96,64,48,32,16'
+assert_contains "${packager}" 'icons/beskid.ico'
+assert_contains "${publisher}" 'beskid-${version}-windows-amd64.exe'
+assert_contains "${publisher}" 'beskid-${version}-macos-arm64.dmg'
+assert_contains "${publisher}" 'beskid-${version}-amd64.deb'
+assert_contains "${publisher}" 'publication requires CI manual main and GH_TOKEN'
+assert_contains "${publisher}" 'publish-release-stream.sh'
+assert_contains "${publisher}" 'gh release upload "cli-v${version}"'
+if grep -Eiq 'linux-snap|snapcraft|canonical/action-(build|publish)|SNAPCRAFT_STORE_CREDENTIALS' "${workflows}"/*.yml "${packager}" "${publisher}"; then
+  echo "retired Snap distribution must not remain in release automation" >&2
   exit 1
 fi
 if find "${root}" -type f \( -path '*/snap/*' -o -iname '*snap*' \) -print -quit | grep -q .; then
