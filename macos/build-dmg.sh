@@ -14,9 +14,19 @@ DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -d "${BUILD_DIR}/lib/beskid-runtime/abi-5" ]] || { echo "Missing ABI-v5 runtime kit" >&2; exit 1; }
 [[ -f "${BUILD_DIR}/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
 [[ -f "${ASSETS_DIR}/icons/beskid-512.png" ]] || { echo "Missing app icon source" >&2; exit 1; }
+[[ -f "${ASSETS_DIR}/dmg-background.png" ]] || { echo "Missing DMG background image" >&2; exit 1; }
 
 stage="$(mktemp -d)"
-trap 'rm -rf "${stage}"' EXIT
+mount=""
+device=""
+attached=0
+cleanup() {
+  if [[ "${attached}" == 1 ]]; then
+    hdiutil detach "${mount}" -quiet || true
+  fi
+  rm -rf "${stage}"
+}
+trap cleanup EXIT
 app="${stage}/Beskid.app"
 contents="${app}/Contents"
 macos="${contents}/MacOS"
@@ -55,6 +65,60 @@ cat >"${contents}/Info.plist" <<EOF
 </dict></plist>
 EOF
 
+volume="${stage}/Beskid"
+volume_label="Beskid ${VERSION}"
+mkdir -p "${volume}/.background"
+cp -a "${app}" "${volume}/Beskid.app"
+cp "${ASSETS_DIR}/dmg-background.png" "${volume}/.background/background.png"
+ln -s /Applications "${volume}/Applications"
+
+rw_image="${stage}/Beskid-rw.dmg"
+hdiutil create -volname "${volume_label}" -srcfolder "${volume}" -ov -format UDRW "${rw_image}" >/dev/null
+attach_output="$(hdiutil attach "${rw_image}" -readwrite -noverify -noautoopen)"
+device="$(awk '$1 ~ /^\/dev\// { print $1; exit }' <<<"${attach_output}")"
+mount="$(awk '$1 ~ /^\/dev\// {
+  path=$0
+  sub(/^.*\t/, "", path)
+  if (path ~ /^\//) {
+    print path
+    exit
+  }
+}' <<<"${attach_output}")"
+[[ -n "${device}" && -d "${mount}" ]] || { echo "Unable to mount writable DMG" >&2; exit 1; }
+attached=1
+
+# Finder persists this layout in .DS_Store, so every mounted copy presents a
+# clear drag-to-install flow instead of a plain archive window.
+osascript <<EOF
+tell application "Finder"
+  tell disk "${volume_label}"
+    -- Finder creates the root window asynchronously after hdiutil attaches.
+    -- Give it one open/close cycle before writing the persistent DS_Store.
+    open
+    delay 5
+    close
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set bounds of container window to {300, 150, 1200, 690}
+    set theViewOptions to the icon view options of container window
+    set arrangement of theViewOptions to not arranged
+    set icon size of theViewOptions to 112
+    set text size of theViewOptions to 14
+    set background picture of theViewOptions to file ".background:background.png"
+    set position of item "Beskid.app" of container window to {225, 330}
+    set position of item "Applications" of container window to {675, 330}
+    close
+    open
+    update without registering applications
+  end tell
+end tell
+EOF
+sync
+hdiutil detach "${mount}" -quiet
+attached=0
+
 out="beskid-${VERSION}-macos-arm64.dmg"
-hdiutil create -volname Beskid -srcfolder "${app}" -ov -format UDZO "${out}"
+hdiutil convert "${rw_image}" -ov -format UDZO -o "${out}" >/dev/null
 echo "built ${out}"

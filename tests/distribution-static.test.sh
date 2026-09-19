@@ -63,6 +63,16 @@ assert_contains "${root}/windows/beskid.wxs" 'DistribRoot)\LICENSE'
 assert_contains "${root}/macos/build-dmg.sh" 'hdiutil create'
 assert_contains "${root}/macos/build-dmg.sh" 'beskid_lsp'
 assert_contains "${root}/macos/build-dmg.sh" 'NOTICE.txt'
+assert_file_exists "${root}/assets/dmg-background.png"
+assert_contains "${root}/macos/build-dmg.sh" 'background.png'
+assert_contains "${root}/macos/build-dmg.sh" 'set theViewOptions to the icon view options of container window'
+assert_contains "${root}/macos/build-dmg.sh" 'set background picture of theViewOptions to file ".background:background.png"'
+assert_contains "${root}/macos/build-dmg.sh" 'Applications'
+assert_contains "${root}/macos/build-dmg.sh" 'hdiutil attach'
+assert_contains "${root}/macos/build-dmg.sh" 'attach_output="$(hdiutil attach'
+assert_contains "${root}/macos/build-dmg.sh" 'path=$0'
+assert_contains "${root}/macos/build-dmg.sh" 'volume_label="Beskid ${VERSION}"'
+assert_contains "${root}/macos/build-dmg.sh" 'delay 5'
 
 # Every supported package surface declares and carries the Apache-2.0 license.
 assert_file_exists "${root}/LICENSE"

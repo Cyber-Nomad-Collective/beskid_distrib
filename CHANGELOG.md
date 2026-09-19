@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Present macOS releases in a branded Finder DMG with a Beskid.app-to-
+  Applications drag-to-install shortcut.
+
 ### Changed
 
 - Check native package and immutable release contracts against Woodpecker build,
