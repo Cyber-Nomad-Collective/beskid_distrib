@@ -73,6 +73,8 @@ assert_contains "${root}/macos/build-dmg.sh" 'attach_output="$(hdiutil attach'
 assert_contains "${root}/macos/build-dmg.sh" 'path=$0'
 assert_contains "${root}/macos/build-dmg.sh" 'volume_label="Beskid ${VERSION}"'
 assert_contains "${root}/macos/build-dmg.sh" 'delay 5'
+assert_contains "${root}/macos/build-dmg.sh" 'with timeout of 30 seconds'
+assert_contains "${root}/macos/build-dmg.sh" 'for attempt in 1 2 3'
 
 # Every supported package surface declares and carries the Apache-2.0 license.
 assert_file_exists "${root}/LICENSE"
