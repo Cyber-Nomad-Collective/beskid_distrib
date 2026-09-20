@@ -35,8 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Retry the bounded Finder layout step while creating the branded macOS DMG,
-  and fail explicitly when the install layout cannot be persisted.
+- Write the branded macOS DMG layout directly through `dmgbuild`, avoiding
+  Finder AppleEvents that time out in non-interactive build sessions.
 - Build the Windows MSI explicitly as x64, use WiX v4-compatible UTF-8 and
   summary metadata, and remove the invalid downgrade-message format token and
   duplicate per-machine property so standard MSI validation passes.
