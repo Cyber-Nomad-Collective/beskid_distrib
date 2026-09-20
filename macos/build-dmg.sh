@@ -89,7 +89,9 @@ attached=1
 
 # Finder persists this layout in .DS_Store, so every mounted copy presents a
 # clear drag-to-install flow instead of a plain archive window.
+configure_finder_layout() {
 osascript <<EOF
+with timeout of 30 seconds
 tell application "Finder"
   tell disk "${volume_label}"
     -- Finder creates the root window asynchronously after hdiutil attaches.
@@ -114,7 +116,26 @@ tell application "Finder"
     update without registering applications
   end tell
 end tell
+end timeout
 EOF
+}
+
+# Finder may still be opening the mounted disk when the first AppleEvent is
+# delivered. Retry a bounded number of times, but fail the package rather than
+# shipping a DMG that lacks the guided install layout.
+for attempt in 1 2 3; do
+  if configure_finder_layout; then
+    break
+  fi
+
+  if [[ "${attempt}" == 3 ]]; then
+    echo "Finder did not persist the DMG layout after ${attempt} attempts" >&2
+    exit 1
+  fi
+
+  echo "Finder layout attempt ${attempt} failed; retrying" >&2
+  sleep 5
+done
 sync
 hdiutil detach "${mount}" -quiet
 attached=0
