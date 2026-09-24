@@ -1,7 +1,22 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- WiX Burn bootstrapper: the downloadable Windows .exe chains the MSI. -->
+<!--
+  WiX Burn bootstrapper: the downloadable Windows .exe chains the Visual C++
+  Redistributable (x64) and then the MSI.
+
+  Variables (-d):  Version  MsiPath  AssetsDir  VcRedistPath
+
+  beskid.exe, beskid_lsp.exe, beskid-up.exe, the ABI-v5 runtime DLL, and the
+  executables that `beskid build` links import VCRUNTIME140.dll. The bundle
+  embeds Microsoft's vc_redist.x64.exe (distributable code) and runs it only
+  when the machine lacks a 14.40 or newer x64 runtime. The package is
+  permanent: uninstalling Beskid never removes a runtime other software shares.
+
+  The MSVC Build Tools and the Windows SDK are not redistributable. `beskid
+  build` and `beskid run` need them; docs/Windows_Guide.md documents them.
+-->
 <Wix xmlns='http://wixtoolset.org/schemas/v4/wxs'
-     xmlns:bal='http://wixtoolset.org/schemas/v4/wxs/bal'>
+     xmlns:bal='http://wixtoolset.org/schemas/v4/wxs/bal'
+     xmlns:util='http://wixtoolset.org/schemas/v4/wxs/util'>
   <Bundle
     Name='Beskid'
     Manufacturer='Cyber Nomad Collective'
@@ -13,7 +28,44 @@
         Theme='hyperlinkLicense'
         LogoFile='$(var.AssetsDir)\icons\beskid-512.png' />
     </BootstrapperApplication>
+
+    <!-- The runtime writes these values under the 64-bit registry view. -->
+    <util:RegistrySearch
+      Id='VcRedistX64InstalledSearch'
+      Variable='VcRedistX64Installed'
+      Root='HKLM'
+      Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+      Value='Installed'
+      Result='value'
+      Bitness='always64' />
+    <util:RegistrySearch
+      Id='VcRedistX64MinorSearch'
+      After='VcRedistX64InstalledSearch'
+      Variable='VcRedistX64Minor'
+      Root='HKLM'
+      Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+      Value='Minor'
+      Result='value'
+      Bitness='always64' />
+
     <Chain>
+      <ExePackage
+        Id='VcRedistX64'
+        DisplayName='Microsoft Visual C++ 2015-2022 Redistributable (x64)'
+        SourceFile='$(var.VcRedistPath)'
+        Name='vc_redist.x64.exe'
+        Compressed='yes'
+        PerMachine='yes'
+        Permanent='yes'
+        Vital='yes'
+        Cache='remove'
+        DetectCondition='VcRedistX64Installed = 1 AND VcRedistX64Minor &gt;= 40'
+        InstallArguments='/install /quiet /norestart'
+        RepairArguments='/repair /quiet /norestart'>
+        <!-- 1638: a newer runtime is already installed. -->
+        <ExitCode Value='1638' Behavior='success' />
+        <ExitCode Value='3010' Behavior='scheduleReboot' />
+      </ExePackage>
       <MsiPackage SourceFile='$(var.MsiPath)' />
     </Chain>
   </Bundle>

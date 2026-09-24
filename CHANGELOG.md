@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Chain the Microsoft Visual C++ 2015-2022 Redistributable (x64) in the
+  Windows setup `.exe`. The bundle embeds the Authenticode-verified
+  `vc_redist.x64.exe`, installs it only when the 14.40+ x64 runtime is missing,
+  and keeps it on uninstall. The standalone MSI stops with an actionable
+  message when the runtime is missing.
+- Document Windows end-user prerequisites: the redistributable for every
+  command, and the non-redistributable MSVC Build Tools and Windows SDK for
+  `beskid build` and `beskid run`.
 - Present macOS releases in a branded Finder DMG with a Beskid.app-to-
   Applications drag-to-install shortcut.
 
