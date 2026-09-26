@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Build a WiX Burn EXE bootstrapper which installs the Visual C++
-# Redistributable (x64) when missing and then the Beskid MSI.
+# Build a WiX Burn EXE bootstrapper with pinned remote prerequisites.
 # Usage: build-exe.sh <version> <msi-path> <assets-dir>
-# Environment: BESKID_VC_REDIST_X64 (optional; see windows/vc-redist.sh)
+# Environment: BESKID_PREREQUISITES_LOCK (optional reviewed lock override)
 set -euo pipefail
 
 VERSION="${1:?version (SemVer)}"
@@ -13,8 +12,6 @@ DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 source "${DISTRIB_ROOT}/scripts/version.sh"
 # shellcheck source=../scripts/wix-toolchain.sh
 source "${DISTRIB_ROOT}/scripts/wix-toolchain.sh"
-# shellcheck source=vc-redist.sh
-source "${DISTRIB_ROOT}/windows/vc-redist.sh"
 
 validate_distribution_version "${VERSION}"
 WINDOWS_VERSION="$(windows_installer_version "${VERSION}")"
@@ -25,18 +22,19 @@ WINDOWS_VERSION="$(windows_installer_version "${VERSION}")"
 load_wix_extension WixToolset.Bal.wixext
 load_wix_extension WixToolset.Util.wixext
 
-redist_dir="$(mktemp -d "${TMPDIR:-/tmp}/beskid-vc-redist.XXXXXX")"
-trap 'rm -rf "${redist_dir}"' EXIT
-VC_REDIST_PATH="$(resolve_vc_redist_x64 "${redist_dir}")"
+fragment_dir="$(mktemp -d "${TMPDIR:-/tmp}/beskid-prerequisites.XXXXXX")"
+trap 'rm -rf "${fragment_dir}"' EXIT
+prerequisites_lock="${BESKID_PREREQUISITES_LOCK:-${DISTRIB_ROOT}/windows/prerequisites.lock.json}"
+prerequisites_fragment="${fragment_dir}/prerequisites.wxs"
+node "${DISTRIB_ROOT}/windows/render-prerequisites.mjs" "${prerequisites_lock}" "${prerequisites_fragment}"
 
 out="beskid-${VERSION}-windows-amd64.exe"
-wix build "${DISTRIB_ROOT}/windows/beskid.bundle.wxs" \
+wix build "${DISTRIB_ROOT}/windows/beskid.bundle.wxs" "${prerequisites_fragment}" \
   -ext "WixToolset.Bal.wixext/${BESKID_WIX_VERSION}" \
   -ext "WixToolset.Util.wixext/${BESKID_WIX_VERSION}" \
   -d Version="${WINDOWS_VERSION}" \
   -d MsiPath="${MSI_PATH}" \
   -d AssetsDir="${ASSETS_DIR}" \
-  -d VcRedistPath="${VC_REDIST_PATH}" \
   -o "${out}"
 
 echo "built ${out}"

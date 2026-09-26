@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "id": "VcRedistX64",
+      "vendor": "Microsoft",
+      "product": "Visual C++ 2015-2022 Redistributable (x64)",
+      "version": "14.44.35211.0",
+      "name": "vc_redist.x64.exe",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/bd1c8d9d-ba95-4eee-bc6e-df1fcc876373/CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B/VC_redist.x64.exe",
+      "sha512": "e131b93acde5ffc76c19eb0784183a1e94dfa9fe06111a7830eae3ad8583895575dd4dca66aa70efddb243c95735a0105efcd3042b4b5ca445d3d8e8c39d957e",
+      "size": 25635768,
+      "sourceUrl": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+      "licenseUrl": "https://visualstudio.microsoft.com/license-terms/"
+    },
+    {
+      "id": "VsBuildTools2022",
+      "vendor": "Microsoft",
+      "product": "Visual Studio 2022 Build Tools bootstrapper",
+      "version": "17.14.37710.0",
+      "name": "vs_BuildTools.exe",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/bc92e2cb-33de-4a0c-995d-efa817f16b16/985969f472caad75d993a5cb4c35a6a4271460cc12b343e2433b994d173aa990/vs_BuildTools.exe",
+      "sha512": "62eb46aeea1ec1714f5cbdea488b8157235879f4595ba7f72c431fea6d2973169300bae1851ff9d989694ed375a55f82b4fec6e668285949fe0593b7ac337041",
+      "size": 4478032,
+      "sourceUrl": "https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022",
+      "licenseUrl": "https://visualstudio.microsoft.com/license-terms/"
+    },
+    {
+      "id": "LlvmX64",
+      "vendor": "LLVM Project",
+      "product": "LLVM Windows x64 installer",
+      "version": "22.1.8",
+      "name": "LLVM-22.1.8-win64.exe",
+      "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe",
+      "sha512": "c307766ec43560cb0072818115a5b29ebfc7d2d3fb2537daf978bcd405189474c218d86f13429484bc601bacf551704e35849a365dd0a282afb2f0095e401baa",
+      "size": 455545840,
+      "sourceUrl": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.8",
+      "licenseUrl": "https://llvm.org/docs/DeveloperPolicy.html#license"
+    }
+  ]
+}

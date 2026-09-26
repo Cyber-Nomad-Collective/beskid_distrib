@@ -7,6 +7,8 @@ msi_source="${root}/windows/beskid.wxs"
 bundle_source="${root}/windows/beskid.bundle.wxs"
 bundle_builder="${root}/windows/build-exe.sh"
 redist_helper="${root}/windows/vc-redist.sh"
+prerequisites_lock="${root}/windows/prerequisites.lock.json"
+prerequisites_renderer="${root}/windows/render-prerequisites.mjs"
 guide="${root}/docs/Windows_Guide.md"
 
 fail() {
@@ -42,29 +44,83 @@ grep -Fq "Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'" "${bundle_
   fail 'bundle does not detect the x64 Visual C++ runtime registry key'
 [[ "$(grep -c "Bitness='always64'" "${bundle_source}")" -ge 2 ]] || \
   fail 'bundle registry searches do not read the 64-bit registry view'
-grep -Fq "DetectCondition='VcRedistX64Installed = 1 AND VcRedistX64Minor &gt;= 40'" "${bundle_source}" || \
-  fail 'bundle does not require an installed 14.40+ Visual C++ runtime'
-for attribute in "Id='VcRedistX64'" "SourceFile='\$(var.VcRedistPath)'" "Compressed='yes'" \
-  "Permanent='yes'" "PerMachine='yes'" "Vital='yes'" "InstallArguments='/install /quiet /norestart'"; do
-  grep -Fq "${attribute}" "${bundle_source}" || fail "VC++ redistributable package lacks ${attribute}"
+tmp="$(mktemp -d)"
+trap 'rm -rf "${tmp}"' EXIT
+node "${prerequisites_renderer}" "${prerequisites_lock}" "${tmp}/prerequisites.wxs" || \
+  fail 'locked prerequisite fragment did not render'
+for field in url sha512 size; do
+  node - "${prerequisites_lock}" "${tmp}/bad-${field}.json" "${field}" <<'NODE'
+const fs = require('node:fs');
+const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+delete lock.packages[0][process.argv[4]];
+fs.writeFileSync(process.argv[3], JSON.stringify(lock));
+NODE
+  if node "${prerequisites_renderer}" "${tmp}/bad-${field}.json" "${tmp}/bad.wxs" 2>/dev/null; then
+    fail "prerequisite renderer accepted missing ${field}"
+  fi
 done
-grep -Fq "<ExitCode Value='1638' Behavior='success' />" "${bundle_source}" || \
-  fail 'bundle treats an already newer Visual C++ runtime as a failure'
-redist_line="$(grep -n "<ExePackage" "${bundle_source}" | head -1 | cut -d: -f1)"
-msi_line="$(grep -n "<MsiPackage" "${bundle_source}" | head -1 | cut -d: -f1)"
-[[ -n "${redist_line}" && -n "${msi_line}" && "${redist_line}" -lt "${msi_line}" ]] || \
-  fail 'bundle must install the Visual C++ runtime before the Beskid MSI'
+for invalid in 'url=http://example.com/payload.exe' 'sha512=deadbeef' 'size=0'; do
+  field="${invalid%%=*}"
+  value="${invalid#*=}"
+  node - "${prerequisites_lock}" "${tmp}/invalid-${field}.json" "${field}" "${value}" <<'NODE'
+const fs = require('node:fs');
+const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+lock.packages[0][process.argv[4]] = process.argv[4] === 'size' ? Number(process.argv[5]) : process.argv[5];
+fs.writeFileSync(process.argv[3], JSON.stringify(lock));
+NODE
+  if node "${prerequisites_renderer}" "${tmp}/invalid-${field}.json" "${tmp}/invalid.wxs" 2>/dev/null; then
+    fail "prerequisite renderer accepted malformed ${field}"
+  fi
+done
+node - "${prerequisites_lock}" "${tmp}/moving.json" <<'NODE'
+const fs = require('node:fs');
+const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+lock.packages[0].url = 'https://aka.ms/vs/17/release/vc_redist.x64.exe';
+fs.writeFileSync(process.argv[3], JSON.stringify(lock));
+NODE
+if node "${prerequisites_renderer}" "${tmp}/moving.json" "${tmp}/moving.wxs" 2>/dev/null; then
+  fail 'prerequisite renderer accepted a moving Microsoft permalink'
+fi
+mkdir -p "${tmp}/audit"
+printf 'wrong vendor bytes' >"${tmp}/audit/vc_redist.x64.exe"
+if BESKID_PREREQUISITES_AUDIT_DIR="${tmp}/audit" \
+  node "${prerequisites_renderer}" "${prerequisites_lock}" "${tmp}/bad-audit.wxs" 2>/dev/null; then
+  fail 'prerequisite renderer accepted a mismatched audit copy'
+fi
+node - "${tmp}/prerequisites.wxs" "${bundle_source}" <<'NODE' || fail 'remote prerequisite contract failed'
+const fs = require('node:fs');
+const fragment = fs.readFileSync(process.argv[2], 'utf8');
+const bundle = fs.readFileSync(process.argv[3], 'utf8');
+const ids = ['VcRedistX64', 'VsBuildTools2022', 'LlvmX64'];
+for (const id of ids) {
+  const packageXml = fragment.match(new RegExp(`<ExePackage\\b[^>]*Id="${id}"[\\s\\S]*?<\\/ExePackage>`));
+  if (!packageXml) throw Error(`missing ${id}`);
+  if (!/<ExePackagePayload\b[^>]*Name="[^"]+"[^>]*DownloadUrl="https:\/\/[^\"]+"[^>]*Hash="[A-Fa-f0-9]{128}"[^>]*Size="[1-9][0-9]*"/.test(packageXml[0])) throw Error(`unpinned ${id}`);
+  if (/SourceFile=|Compressed="yes"/.test(packageXml[0])) throw Error(`embedded ${id}`);
+  for (const attr of ['Permanent="yes"', 'PerMachine="yes"', 'Vital="yes"']) {
+    if (!packageXml[0].includes(attr)) throw Error(`${id} lacks ${attr}`);
+  }
+}
+if (!fragment.includes('DetectCondition="VcRedistX64Installed = 1 AND VcRedistX64Minor &gt;= 40"')) throw Error('VC++ floor lost');
+if (!fragment.includes('<ExitCode Value="1638" Behavior="success" />')) throw Error('VC++ exit code mapping lost');
+const refs = ['VcRedistX64Group', 'VsBuildTools2022Group', 'LlvmX64Group'];
+let previous = -1;
+for (const ref of refs) {
+  const position = bundle.indexOf(`<PackageGroupRef Id='${ref}' />`);
+  if (position <= previous) throw Error(`package order invalid at ${ref}`);
+  previous = position;
+}
+if (bundle.indexOf('<MsiPackage', previous) < 0) throw Error('MSI must follow prerequisites');
+if (/vc_redist\.x64\.exe|vs_BuildTools\.exe|LLVM-[^'\"]+\.exe/.test(bundle)) throw Error('static bundle names embedded vendor payload');
+NODE
 if grep -Eq '<RemotePayload|RemotePayload ' "${bundle_source}"; then
   fail 'bundle uses the WiX v3 RemotePayload element'
 fi
 grep -Fq 'load_wix_extension WixToolset.Util.wixext' "${bundle_builder}" || \
   fail 'bundle builder does not load the WiX util extension'
-grep -Fq -- '-d VcRedistPath=' "${bundle_builder}" || \
-  fail 'bundle builder does not pass the redistributable payload'
-grep -Fq "https://aka.ms/vs/17/release/vc_redist.x64.exe" "${redist_helper}" || \
-  fail 'redistributable helper does not use the official Microsoft permalink'
-grep -Fq 'Get-AuthenticodeSignature' "${redist_helper}" || \
-  fail 'downloaded redistributable is not verified by Authenticode'
+if grep -Fq -- '-d VcRedistPath=' "${bundle_builder}"; then
+  fail 'bundle builder still passes an embedded redistributable'
+fi
 
 # A standalone MSI fails closed without the runtime; repair/uninstall stay open.
 grep -Fq "Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'" "${msi_source}" || \
@@ -74,11 +130,9 @@ grep -Fq "Condition='Installed OR VCREDISTX64INSTALLED = \"#1\"'" "${msi_source}
 
 # The MSVC Build Tools and the Windows SDK are not redistributable. Neither
 # package may carry them; the guide documents them for `beskid build`/`run`.
-for source in "${msi_source}" "${bundle_source}" "${bundle_builder}" "${msi_builder}"; do
-  if grep -Eiq 'vs_buildtools|vs_BuildTools|winsdksetup|Windows Kits|link\.exe|lld-link' "${source}"; then
-    fail "$(basename "${source}") ships or fetches a non-redistributable or undecided native toolchain"
-  fi
-done
+if grep -Eq 'SourceFile=.*(vc_redist|vs_BuildTools|LLVM-)' "${tmp}/prerequisites.wxs"; then
+  fail 'vendor bytes are embedded in the prerequisite fragment'
+fi
 for phrase in 'VCRUNTIME140.dll' 'Desktop development with C++' 'Windows SDK' \
   'x64 Native Tools Command Prompt' 'beskid test' 'beskid build' 'llvm-ml'; do
   grep -Fq "${phrase}" "${guide}" || fail "Windows guide does not document: ${phrase}"
