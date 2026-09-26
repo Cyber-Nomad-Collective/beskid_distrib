@@ -53,11 +53,14 @@ not require `BESKID_RUNTIME_PREFIX` or `BESKID_CORELIB_ROOT`.
 
 ## Container images
 
-`docker/` holds a base image and a CI runner image built from the verified
-bundle. Nothing in the superrepo's Woodpecker pipelines builds or publishes
-them, and no `ghcr.io/cyber-nomad-collective/beskid` package exists yet, so
-treat them as sources to build locally (see `docker/README.md`) until a
-publication lane is added.
+Woodpecker builds and pushes the five platform images (`site`, `learn`,
+`tracker`, `nexus`, `pckg`) to `cr.beskid-lang.org/beskid/` with
+`scripts/ci/woodpecker-platform-images.sh`; `learn` carries the Beskid CLI
+toolchain. `docker/` here is different: a base toolchain image and a CI runner
+image built from a verified bundle. Their old GitHub Actions lane was removed
+with that workflow (superrepo commit `fcde7045`), and no pipeline in this
+repository's superrepo builds them now. Build them locally as described in
+`docker/README.md` until a Woodpecker lane is added.
 
 ## Building programs needs a C toolchain
 

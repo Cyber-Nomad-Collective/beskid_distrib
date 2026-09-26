@@ -33,8 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one across the README, per-platform guides, `SECRETS.md`, and the Homebrew
   formula template: `cli-v<version>` plus rolling `cli-stable` / `cli-unstable`
   releases, and the single `compiler_release_token` secret the release job uses.
-- State plainly that the container images are not built or published by any
-  pipeline, and document how to build them locally from a verified bundle.
+- State plainly that the superrepo's Woodpecker pipelines do not build these
+  container images (the GitHub Actions lane was removed), and document how to
+  build them locally from a verified bundle.
 - Describe the whole installed toolchain, not just the CLI and LSP, in the
   Debian package description.
 - Check native package and immutable release contracts against Woodpecker build,

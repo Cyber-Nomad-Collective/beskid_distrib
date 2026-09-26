@@ -2,9 +2,10 @@
 
 Sources for two container images built from a verified Beskid target bundle.
 
-> **Not published.** No Woodpecker pipeline in the superrepo builds or pushes
-> these images, and no `ghcr.io/cyber-nomad-collective/beskid` package exists.
-> Build them locally as described below until a publication lane is added.
+> **No pipeline builds these.** Their GitHub Actions lane was removed with the
+> retired workflow (superrepo commit `fcde7045`), and the superrepo's Woodpecker
+> pipelines only push the five platform images to `cr.beskid-lang.org/beskid/`.
+> Build these locally as described below until a Woodpecker lane is added.
 
 ## Images
 
