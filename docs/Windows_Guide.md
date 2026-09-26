@@ -88,6 +88,10 @@ evidence directory. The script hashes the setup/MSI and all vendor files,
 records VC++/MSVC/SDK/LLVM versions, executes `lld-link`, and runs
 `beskid test`, `build`, and `run` with a new ordinary process environment
 when installed. Each case exits nonzero if its expected machine state fails.
+If Burn returns `3010`, the recorder writes a pending continuation, then
+stops. Reboot Windows and rerun the same case with `-ResumeAfterReboot`; it
+checks that the machine actually rebooted before checking installed tools and
+running CLI smoke.
 For example, from the superrepo checkout on a clean VM:
 
 ```powershell
@@ -110,15 +114,16 @@ Use a fresh snapshot or a controlled predecessor state for each case:
 | `preexisting` | Complete Build Tools, SDK, and LLVM already installed. |
 | `offline` | Clean VM with vendor network access disabled; capture the failed setup log and exit code. |
 | `hash-failure` | Clean VM with a deliberately mismatched remote-payload hash test bundle; capture its failed log and exit code. Keep the released setup EXE separately for release-hash comparison. |
-| `cancel` | Clean VM; cancel through the UI during a vendor download and capture its log and exit code. |
+| `cancel` | Clean VM; cancel through the UI during a vendor download. The recorder currently fails closed for this case until automated UI cancellation and trusted provenance are implemented. |
 | `repair-deselect` | Prior opt-in install; repair with `InstallDeveloperTools=0`. |
 | `upgrade` | Prior Beskid version installed; pass `-PriorVersion`. |
 | `uninstall` | Current Beskid installed with shared prerequisites present. |
 
-For the three fault cases, pass `-ObservedSetupExe`, `-ObservedLog`, and
-`-ObservedExitCode`; the
-script verifies the failure marker, absent Beskid install, and retained
-preexisting vendor tools. Collect actual screenshots named
+For `offline`, the recorder runs the released setup EXE on a prepared offline
+VM. For `hash-failure`, pass `-ObservedSetupExe` with a deliberately altered
+test bundle; the recorder runs it and checks the failure log, absent Beskid
+install, and retained preexisting vendor tools. `cancel` currently stops with
+an explicit unsupported-case error. Collect actual screenshots named
 `welcome-100.png`, `welcome-150.png`, `options-100.png`, `options-150.png`,
 `progress-100.png`, `progress-150.png`, `success-100.png`,
 `success-150.png`, `failure-100.png`, `failure-150.png`,
@@ -128,12 +133,14 @@ checks their presence.
 
 After transferring this evidence to a directory visible to the Woodpecker
 release worker, run `node scripts/ci/windows-installer-smoke-gate.mjs
-<evidence-dir> <setup-sha256> <msi-sha256>`. Manual publication requires
-`BESKID_WINDOWS_INSTALLER_SMOKE_DIR` to point to that directory and fails
-before uploading anything if any case, artifact hash, vendor hash record,
-CLI smoke, or screenshot is missing. The persistent Windows build agent is
-not a disposable install target. A fresh disposable VM and an approved
-evidence-transfer path are still required to complete this gate.
+<evidence-dir> <setup-sha256> <msi-sha256>
+<checked-in-prerequisites.lock.json>`. This checks scenario records and the
+vendor hashes against the reviewed lock. It reports structural validity only:
+the evidence is not yet authenticated as coming from a disposable VM.
+Manual publication is explicitly blocked, even when
+`BESKID_WINDOWS_INSTALLER_SMOKE_DIR` is set, until a trusted VM provenance and
+evidence-transfer path is integrated. The persistent Windows build agent is
+not a disposable install target.
 
 The standalone MSI and setup EXE are currently unsigned, so Windows may show
 an unrecognized-app warning. Release engineering must review that warning and
