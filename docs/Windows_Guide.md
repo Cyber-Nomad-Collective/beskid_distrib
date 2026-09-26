@@ -1,9 +1,11 @@
-# Windows Guide — obtaining CI secrets for the MSI and EXE pipeline
+# Windows Guide — MSI and setup EXE
 
-The Windows packaging job (`windows-msi` in the superrepo's `distribute.yml`)
-builds an MSI with WiX v4, wraps it in a WiX Burn EXE bootstrapper, and uploads
-both to the `cli-latest` / `cli-v<version>` release on `beskid_compiler`. It
-needs **one** secret.
+The Windows packaging step (`windows/build-msi.sh` and `windows/build-exe.sh`,
+run by the superrepo's Woodpecker Windows pipeline) builds an MSI with WiX v4,
+wraps it in a WiX Burn EXE bootstrapper, and uploads both to the
+`cli-v<version>` release (and the rolling `cli-stable` / `cli-unstable`
+release) on `beskid_compiler`. It uses the release job's
+`compiler_release_token`; see `SECRETS.md`.
 
 ## End-user prerequisites
 
@@ -52,29 +54,7 @@ End users do not build the runtime kit. Release engineers who run
 LLVM for Windows on `PATH`: `llvm-ml` assembles the context-switch and platform
 assembly and `clang` compiles the platform C sources.
 
-## Secret required
-
-| Secret | Purpose |
-|---|---|
-| `DISTRIB_GH_PAT` | Download immutable `cli-v<version>` / `lsp-v<version>` binaries from `beskid_compiler`, and upload the built `.msi` and bootstrapper `.exe`. |
-
-## Obtaining `DISTRIB_GH_PAT`
-
-1. As an owner of `Cyber-Nomad-Collective`, open
-   https://github.com/settings/tokens/new (classic PAT).
-2. **Note:** `Beskid distrib pipeline`.
-3. **Expiration:** 365 days (rotate before expiry).
-4. **Scopes:** select `repo` (full). This grants read on `beskid_compiler`
-   releases and write to upload `.msi` assets. If `beskid_compiler` is in a
-   private org, `repo` is required; fine-grained PATs scoped to just
-   `beskid_compiler` also work and are preferred where feasible.
-5. Generate, copy the `ghp_...` token immediately (shown once).
-6. Add it to the **superrepo** (`Cyber-Nomad-Collective/beskid`) under
-   **Settings → Secrets and variables → Actions → New repository secret**:
-   - Name: `DISTRIB_GH_PAT`
-   - Value: the `ghp_...` token.
-
-## What the MSI does (no secrets needed for this)
+## What the MSI does
 
 The MSI itself is built from `beskid_distrib/windows/beskid.wxs`:
 
@@ -103,6 +83,6 @@ The MSI itself is built from `beskid_distrib/windows/beskid.wxs`:
 The MSI is **unsigned**. Windows SmartScreen will show an "unrecognized app"
 warning the first time a user runs it. This is expected for v1. Users click
 **More info → Run anyway**. When a code-signing certificate is later obtained
-(Authenticode OV/EV), add a `signtool sign` step to the `windows-msi` job and
-add secrets `WINDOWS_CERT_PFX` (base64) + `WINDOWS_CERT_PASSWORD`; the WiX
-source already separates build from signing so this is additive.
+(Authenticode OV/EV), add a `signtool sign` step to the Windows packaging pipeline and store the
+certificate as Woodpecker secrets; the WiX source already separates build from
+signing so this is additive.

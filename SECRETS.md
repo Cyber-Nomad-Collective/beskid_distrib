@@ -1,22 +1,31 @@
 # Distribution Pipeline Secrets
 
-All secrets are configured on the **superrepo**
-(`Cyber-Nomad-Collective/beskid`) under **Settings → Secrets and variables →
-Actions**. Per-platform setup instructions live in `docs/<Platform>_Guide.md`.
+Distribution runs in the superrepo's Woodpecker pipelines
+(`.woodpecker/release.yml` and `scripts/ci/`). The GitHub Actions secrets that
+earlier versions of this file described (`DISTRIB_GH_PAT`,
+`HOMEBREW_TAP_GIT_TOKEN`) are not used by any pipeline and should not be
+created.
 
-| Secret | Required by | Scope / Notes |
+| Woodpecker secret | Exposed as | Used for |
 |---|---|---|
-| `DISTRIB_GH_PAT` | all platform jobs | Classic PAT, `repo` scope. Used to download `cli-latest`/`lsp-latest` assets from `beskid_compiler` and upload `.msi`/`.deb` back to those releases. If `beskid_compiler` is private, this PAT must have access to `Cyber-Nomad-Collective`. |
-| `HOMEBREW_TAP_GIT_TOKEN` | `macos-brew` | Classic PAT, `repo` scope on `Cyber-Nomad-Collective/beskid_homebrew`. Cross-repo formula push; the default `GITHUB_TOKEN` cannot do this. Optional — if absent the `macos-brew` job is skipped. |
+| `compiler_release_token` | `GH_TOKEN` | Everything the release job does against GitHub: downloading the verified `v<version>` bundle, uploading the `.msi`, `.exe`, `.dmg`, `.deb`, and `beskid.rb` assets to `cli-v<version>` and the rolling `cli-stable` / `cli-unstable` releases on `beskid_compiler`, and committing `Formula/beskid.rb` to `Cyber-Nomad-Collective/beskid_homebrew` for stable `X.Y.Z` releases. |
 
-## Minimum viable set
+The token therefore needs release write access on `beskid_compiler` and
+contents write access on `beskid_homebrew`. A fine-grained token limited to
+those two repositories is enough.
 
-Only `DISTRIB_GH_PAT` is required. `HOMEBREW_TAP_GIT_TOKEN` is optional — the
-`macos-brew` job is skipped with a warning when the secret is absent, allowing
-the remaining platform jobs to proceed.
+Other Woodpecker secrets (`open_vsx_token`, `pckg_release_publisher_key`,
+`registry_username`, `registry_password`) belong to the editor, package
+registry, and platform-image pipelines, not to distribution.
+
+## Not configured
+
+- No code-signing or notarization secrets exist. The MSI, the setup `.exe`, and
+  the DMG are unsigned, and Homebrew does not require signing.
+- No apt repository or GPG key exists. The `.deb` is a release asset only.
 
 ## Rotation
 
-- PATs (`DISTRIB_GH_PAT`, `HOMEBREW_TAP_GIT_TOKEN`): rotate before GitHub's
-  365-day expiry. Prefer fine-grained PATs scoped to the single required repo
-  where possible.
+Rotate `compiler_release_token` before its expiry and update it in the
+Woodpecker repository settings. Prefer a fine-grained token scoped to the two
+repositories above.
