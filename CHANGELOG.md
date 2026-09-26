@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Document the Windows setup's runtime-only default, optional native tools,
   unattended selection, vendor downloads, standalone MSI, and recovery steps.
+- Document the disposable-VM installer matrix and its release-evidence gate.
 - Chain the pinned Microsoft Visual C++ 2015-2022 Redistributable (x64) as
   a verified remote payload in the Windows setup `.exe`, installing it only
   when the 14.40+ x64 runtime is missing and retaining it on uninstall. The

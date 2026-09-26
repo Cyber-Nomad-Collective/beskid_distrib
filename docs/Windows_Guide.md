@@ -78,6 +78,63 @@ for both setup choices, failure/cancel/repair/upgrade paths, and fresh-shell
 CLI/JIT/build/run; record installed MSVC/SDK versions and 100%/150% UI
 screenshots. A passing package job alone does not establish those behaviors.
 
+Run `scripts/ci/windows-installer-smoke.ps1` from an elevated PowerShell on
+approved disposable Windows VMs, once per scenario: `runtime`, `developer`,
+`community`, `preexisting`, `offline`, `hash-failure`, `cancel`,
+`repair-deselect`, `upgrade`, and `uninstall`. Supply the exact packaged EXE,
+MSI, `windows/prerequisites.lock.json`, a directory containing all three
+locked vendor EXEs, separate test and app project fixtures, and one shared
+evidence directory. The script hashes the setup/MSI and all vendor files,
+records VC++/MSVC/SDK/LLVM versions, executes `lld-link`, and runs
+`beskid test`, `build`, and `run` with a new ordinary process environment
+when installed. Each case exits nonzero if its expected machine state fails.
+For example, from the superrepo checkout on a clean VM:
+
+```powershell
+powershell.exe -NoProfile -File scripts/ci/windows-installer-smoke.ps1 `
+  -Scenario developer -SetupExe C:\release\beskid-0.5.0-windows-amd64.exe `
+  -Msi C:\release\beskid-0.5.0-windows-amd64.msi `
+  -LockFile beskid_distrib\windows\prerequisites.lock.json `
+  -VendorAuditDir C:\vendor-audit `
+  -TestProject C:\fixtures\test_harness\TestHarness.bproj `
+  -ProgramProject C:\fixtures\smoke_project\SmokeProject.bproj `
+  -OutputDir C:\installer-evidence
+```
+
+Use a fresh snapshot or a controlled predecessor state for each case:
+
+| Case | Required starting state / action |
+| --- | --- |
+| `runtime`, `developer` | Clean VM with no Beskid or developer tools; leave the option off/on respectively. |
+| `community` | VS Community installed, no Build Tools product; verify Community remains and Build Tools is added. |
+| `preexisting` | Complete Build Tools, SDK, and LLVM already installed. |
+| `offline` | Clean VM with vendor network access disabled; capture the failed setup log and exit code. |
+| `hash-failure` | Clean VM with a deliberately mismatched remote-payload hash test bundle; capture its failed log and exit code. Keep the released setup EXE separately for release-hash comparison. |
+| `cancel` | Clean VM; cancel through the UI during a vendor download and capture its log and exit code. |
+| `repair-deselect` | Prior opt-in install; repair with `InstallDeveloperTools=0`. |
+| `upgrade` | Prior Beskid version installed; pass `-PriorVersion`. |
+| `uninstall` | Current Beskid installed with shared prerequisites present. |
+
+For the three fault cases, pass `-ObservedSetupExe`, `-ObservedLog`, and
+`-ObservedExitCode`; the
+script verifies the failure marker, absent Beskid install, and retained
+preexisting vendor tools. Collect actual screenshots named
+`welcome-100.png`, `welcome-150.png`, `options-100.png`, `options-150.png`,
+`progress-100.png`, `progress-150.png`, `success-100.png`,
+`success-150.png`, `failure-100.png`, `failure-150.png`,
+`msi-directory-100.png`, and `msi-directory-150.png`. A human must inspect
+the images for correct Beskid branding and legibility; the automated gate
+checks their presence.
+
+After transferring this evidence to a directory visible to the Woodpecker
+release worker, run `node scripts/ci/windows-installer-smoke-gate.mjs
+<evidence-dir> <setup-sha256> <msi-sha256>`. Manual publication requires
+`BESKID_WINDOWS_INSTALLER_SMOKE_DIR` to point to that directory and fails
+before uploading anything if any case, artifact hash, vendor hash record,
+CLI smoke, or screenshot is missing. The persistent Windows build agent is
+not a disposable install target. A fresh disposable VM and an approved
+evidence-transfer path are still required to complete this gate.
+
 The standalone MSI and setup EXE are currently unsigned, so Windows may show
 an unrecognized-app warning. Release engineering must review that warning and
 the pinned vendor signatures before publishing.
