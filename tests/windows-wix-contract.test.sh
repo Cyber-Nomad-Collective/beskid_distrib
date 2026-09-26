@@ -48,6 +48,21 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
 node "${prerequisites_renderer}" "${prerequisites_lock}" "${tmp}/prerequisites.wxs" || \
   fail 'locked prerequisite fragment did not render'
+node - "${prerequisites_lock}" <<'NODE' || fail 'LLVM payload URL is replaceable or not directly downloadable'
+const fs = require('node:fs');
+const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const llvm = lock.packages.find(packageItem => packageItem.id === 'LlvmX64');
+if (!/^https:\/\/release-assets\.githubusercontent\.com\/github-production-release-asset\/75821432\/[0-9a-f-]{36}$/.test(llvm.url)) process.exit(1);
+NODE
+node - "${prerequisites_lock}" "${tmp}/replaceable.json" <<'NODE'
+const fs = require('node:fs');
+const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+lock.packages[2].url = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe';
+fs.writeFileSync(process.argv[3], JSON.stringify(lock));
+NODE
+if node "${prerequisites_renderer}" "${tmp}/replaceable.json" "${tmp}/replaceable.wxs" 2>/dev/null; then
+  fail 'prerequisite renderer accepted a replaceable LLVM release-tag URL'
+fi
 for field in url sha512 size; do
   node - "${prerequisites_lock}" "${tmp}/bad-${field}.json" "${field}" <<'NODE'
 const fs = require('node:fs');
@@ -103,6 +118,10 @@ for (const id of ids) {
 }
 if (!fragment.includes('DetectCondition="VcRedistX64Installed = 1 AND VcRedistX64Minor &gt;= 40"')) throw Error('VC++ floor lost');
 if (!fragment.includes('<ExitCode Value="1638" Behavior="success" />')) throw Error('VC++ exit code mapping lost');
+if (!bundle.includes("<Variable Name='InstallDeveloperTools' Type='numeric' Value='0'")) throw Error('developer tools must default off');
+for (const id of ['VsBuildTools2022', 'LlvmX64']) {
+  if (!fragment.match(new RegExp(`Id="${id}"[^>]*InstallCondition="InstallDeveloperTools = 1"`))) throw Error(`${id} is not opt-in`);
+}
 const refs = ['VcRedistX64Group', 'VsBuildTools2022Group', 'LlvmX64Group'];
 let previous = -1;
 for (const ref of refs) {

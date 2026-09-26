@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Verify a release-audit copy of the pinned VC++ redistributable on Windows.
-# The setup EXE references a remote payload; it never embeds this file.
+# Verify release-audit copies of Microsoft prerequisite EXEs on Windows.
+# The setup EXE references remote payloads; it never embeds these files.
 
-verify_vc_redist_signature() {
-  local file="${1:?vc_redist path}"
+verify_microsoft_exe_signature() {
+  local file="${1:?Microsoft EXE path}"
   local shell=''
   if command -v powershell.exe >/dev/null 2>&1; then shell=powershell.exe
   elif command -v pwsh >/dev/null 2>&1; then shell=pwsh
   else
-    echo 'PowerShell is required to verify the VC++ Authenticode signature.' >&2
+    echo 'PowerShell is required to verify Microsoft Authenticode signatures.' >&2
     return 1
   fi
   local native="${file}"
