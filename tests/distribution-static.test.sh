@@ -118,6 +118,27 @@ if grep -Riq -E 'snap store|snapcraft|snap install|linux-snap|SNAPCRAFT_STORE_CR
   exit 1
 fi
 
+# Documentation and metadata describe the Woodpecker pipeline that exists, not the
+# retired GitHub Actions one. SECRETS.md may name the retired secrets only to say
+# they are unused, so it is checked for the real secret instead.
+if grep -RIn -E 'cli-latest|lsp-latest|distribute\.yml|DISTRIB_GH_PAT|HOMEBREW_TAP_GIT_TOKEN|homebrew-releaser|macos-brew|windows-msi|macos-dmg' \
+  "${root}/README.md" "${root}/docs" "${root}/docker" "${root}/macos" "${root}/assets"; then
+  echo "retired GitHub Actions or pre-Woodpecker names remain in distribution documentation" >&2
+  exit 1
+fi
+assert_contains "${root}/SECRETS.md" 'compiler_release_token'
+assert_contains "${workflows}/release.yml" 'from_secret: compiler_release_token'
+
+# `beskid build` and `beskid run` link with the system C driver, so every Linux
+# consumer of the toolchain must be able to get one.
+assert_contains "${root}/deb/debian/control" 'Recommends: gcc | c-compiler, libc6-dev'
+assert_contains "${root}/docker/Dockerfile" 'gcc libc6-dev'
+assert_contains "${root}/docker/Dockerfile.runner" 'gcc'
+if grep -Fq 'BESKID_VERSION' "${root}/docker/docker-compose.yml" "${root}/docker/README.md"; then
+  echo "container docs and compose must not pass a build argument the Dockerfiles never declare" >&2
+  exit 1
+fi
+
 bash "${root}/tests/distribution-scripts.test.sh"
 bash "${root}/tests/windows-wix-contract.test.sh"
 

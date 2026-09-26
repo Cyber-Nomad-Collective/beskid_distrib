@@ -25,6 +25,21 @@ fi
 [[ "$(windows_installer_version '0.4.481-unstable')" == '0.4.481' ]] || \
   fail 'unstable Windows version projection was not numeric'
 
+# The 0.5 line: multi-digit patch numbers keep both accepted shapes, malformed
+# versions are still rejected, and MSI/Burn metadata stays numeric.
+validate_distribution_version '0.5.0'
+validate_distribution_version '0.5.12'
+validate_distribution_version '0.5.12-unstable'
+for rejected in '0.5' '0.5.0-rc1' 'v0.5.0' '0.05.0' '0.5.0-unstable-1'; do
+  if validate_distribution_version "${rejected}" 2>/dev/null; then
+    fail "malformed release version was accepted: ${rejected}"
+  fi
+done
+[[ "$(windows_installer_version '0.5.12')" == '0.5.12' ]] || \
+  fail '0.5 stable Windows version projection changed the public version'
+[[ "$(windows_installer_version '0.5.12-unstable')" == '0.5.12' ]] || \
+  fail '0.5 unstable Windows version projection was not numeric'
+
 mkdir -p "${tmp}/bin" "${tmp}/fetch" "${tmp}/windows-build" "${tmp}/assets/icons"
 cat >"${tmp}/bin/gh" <<'SH'
 #!/usr/bin/env bash
