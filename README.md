@@ -3,14 +3,15 @@
 Platform-specific packaging recipes, assets, and guides for the Beskid
 compiler toolchain. This repository is a **content-only submodule** of the
 [`beskid`](https://github.com/Cyber-Nomad-Collective/beskid) superrepo — the
-CI orchestration lives in the superrepo at
-`.github/workflows/distribute.yml`, not here.
+CI orchestration lives in the superrepo's Woodpecker pipelines, not here.
 
 ## What lives here
 
-- `assets/icons/` — derived branding (`.ico`, `.png`, `.svg`) used by installers.
+- `assets/icons/` — Beskid source branding used by installers.
 - `windows/` — WiX v4 MSI source plus a Burn bootstrapper that produces the
-  Windows MSI and end-user `.exe` installer.
+  Windows MSI and end-user `.exe` installer. The setup EXE downloads a pinned
+  Visual C++ runtime and offers an unchecked MSVC/SDK/LLVM developer-tools
+  choice; see the [Windows installation guide](docs/Windows_Guide.md).
 - `macos/build-dmg.sh` — builds the portable `Beskid.app` DMG from the CLI and
   LSP binaries; Homebrew remains available for package-managed installs.
 - `macos/Formula/beskid.rb.tpl` — Homebrew formula template rendered with the
@@ -20,7 +21,7 @@ CI orchestration lives in the superrepo at
 - `docker/` — Container images (generic + GitHub Actions runner).
 - `scripts/` — helpers to resolve the current version and fetch immutable
   verified `v<version>` target bundles from `beskid_compiler`.
-- `docs/` — per-platform guides for obtaining CI secrets, plus `SECRETS.md`.
+- `docs/` — platform installation and operations guides, plus `SECRETS.md`.
 
 ## Where packages publish
 
@@ -34,10 +35,9 @@ CI orchestration lives in the superrepo at
 
 ## Trigger
 
-The distrib pipeline runs in the superrepo on `workflow_run` of the `Compiler`
-workflow. It uses the rolling aliases only to discover the version, fetches
-the matching immutable assets, wraps them into per-platform packages, and
-publishes both immutable assets and rolling aliases.
+Woodpecker packages qualified, immutable compiler bundles on the matching
+native host. Packaging records checksums and does not publish. Stable
+publication is a separate reviewed manual operation.
 
 Every supported package preserves one install prefix: `bin/`,
 `lib/beskid-runtime/abi-5/`, `beskid_corelib/`, `packages/`, and
@@ -45,7 +45,7 @@ Every supported package preserves one install prefix: `bin/`,
 own executable under `<prefix>/bin`, so installed packages and OCI images do
 not require `BESKID_RUNTIME_PREFIX` or `BESKID_CORELIB_ROOT`.
 
-See `docs/SECRETS.md` for the credentials required to run a full pipeline.
+See `docs/SECRETS.md` for historical and publishing credential guidance.
 
 ## License
 

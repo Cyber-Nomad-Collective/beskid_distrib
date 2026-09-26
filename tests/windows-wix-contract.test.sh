@@ -190,7 +190,8 @@ if grep -Eq 'SourceFile=.*(vc_redist|vs_BuildTools|LLVM-)' "${tmp}/prerequisites
   fail 'vendor bytes are embedded in the prerequisite fragment'
 fi
 for phrase in 'VCRUNTIME140.dll' 'Desktop development with C++' 'Windows SDK' \
-  'x64 Native Tools Command Prompt' 'beskid test' 'beskid build' 'llvm-ml'; do
+  'fresh ordinary shell' 'InstallDeveloperTools=1' 'SHA-512' \
+  'beskid test' 'beskid build' 'llvm-ml'; do
   grep -Fq "${phrase}" "${guide}" || fail "Windows guide does not document: ${phrase}"
 done
 

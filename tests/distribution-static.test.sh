@@ -97,8 +97,11 @@ assert_contains "${packager}" 'macos/build-dmg.sh'
 assert_contains "${packager}" 'macos/Formula/beskid.rb.tpl'
 assert_contains "${packager}" 'deb/build-deb.sh'
 assert_contains "${packager}" 'assets/icons/beskid-512.png'
-assert_contains "${packager}" 'icon:auto-resize=256,128,96,64,48,32,16'
-assert_contains "${packager}" 'icons/beskid.ico'
+assert_contains "${packager}" 'windows/generate-brand-assets.sh'
+if grep -Fq '"magick"' "${packager}"; then
+  echo 'Woodpecker must use the distribution brand generator, not a second ImageMagick recipe' >&2
+  exit 1
+fi
 assert_contains "${publisher}" 'beskid-${version}-windows-amd64.exe'
 assert_contains "${publisher}" 'beskid-${version}-macos-arm64.dmg'
 assert_contains "${publisher}" 'beskid-${version}-amd64.deb'

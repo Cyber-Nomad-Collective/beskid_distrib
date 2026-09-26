@@ -1,108 +1,83 @@
-# Windows Guide — obtaining CI secrets for the MSI and EXE pipeline
+# Windows installation guide
 
-The Windows packaging job (`windows-msi` in the superrepo's `distribute.yml`)
-builds an MSI with WiX v4, wraps it in a WiX Burn EXE bootstrapper, and uploads
-both to the `cli-latest` / `cli-v<version>` release on `beskid_compiler`. It
-needs **one** secret.
+Beskid supports x64 Windows 10 or later. The downloadable
+`beskid-<version>-windows-amd64.exe` is the recommended installer. It needs
+administrator approval and an internet connection to fetch missing vendor
+prerequisites. Allow space for the Beskid installation and, when selected,
+several GB for Visual Studio Build Tools, Windows SDK, and LLVM. Setup may
+request a restart; complete it before opening a new shell.
 
-## End-user prerequisites
+## Choose what to install
 
-Beskid supports Windows 10 and later on x64. The table shows what each
-command needs on a clean machine, where it comes from, and how the installer
-handles it.
+The setup offers an unchecked **Install developer tools (MSVC, Windows SDK,
+LLVM)** option:
 
-| Need | Used by | Source | Installer |
-|---|---|---|---|
-| UCRT (`api-ms-win-crt-*.dll`) | all binaries | Part of Windows 10 and later | Not needed |
-| `VCRUNTIME140.dll` (Visual C++ 2015-2022 Redistributable, x64, 14.40 or later) | `beskid.exe`, `beskid_lsp.exe`, `beskid-up.exe`, the runtime DLL used by `beskid test`, and every program that `beskid build` links | Microsoft, distributable code | Chained: the setup `.exe` installs it when it is missing. The standalone `.msi` stops with a message if it is missing |
-| ABI-v5 runtime kit (`lib\beskid-runtime\abi-5\x86_64-pc-windows-msvc`) | `beskid test` (JIT, loads the kit DLL), `beskid build`, `beskid run` | Release bundle | Shipped in the MSI |
-| `kernel32.dll`, `ws2_32.dll` | runtime and linked programs | Windows | Not needed |
-| MSVC x64 compiler and linker (`cl.exe`, `link.exe`) and the MSVC CRT import libraries (`msvcrt.lib`, `vcruntime.lib`) | `beskid build`, `beskid run` | Visual Studio Build Tools, `Desktop development with C++` workload | Documented only. Microsoft does not permit redistribution |
-| Windows SDK import libraries (`kernel32.lib`, `ucrt.lib`, `ws2_32.lib`) | `beskid build`, `beskid run` | Windows SDK (selected by default in the same workload) | Documented only. Microsoft does not permit redistribution |
+| Choice | Installs | Commands after setup |
+| --- | --- | --- |
+| Default, runtime only | Beskid CLI, LSP, updater, ABI-v5 runtime kit, corelib, bundled packages, and Visual C++ x64 Redistributable 14.40 or newer when needed | `beskid test` and other CLI/JIT operations |
+| Developer tools selected | Everything above, plus Visual Studio 2022 Build Tools with the Desktop development with C++ workload and Windows SDK, and LLVM with `lld-link` | `beskid build` and `beskid run` from a fresh ordinary shell |
 
-`beskid test` runs tests in the JIT and needs only the redistributable and the
-bundled runtime kit. `beskid run` is not a JIT command: it links a temporary
-executable, so it has the same needs as `beskid build`.
+`beskid run` links an executable, so it requires the native tools too. The
+compiler discovers the installed x64 toolchain for its child processes; you
+do not need to open the Visual Studio Native Tools prompt or set global
+`LIB`/`INCLUDE` variables. An existing complete toolchain may already satisfy
+the requirement. The installer retains shared Microsoft and LLVM prerequisites
+when you repair or remove Beskid.
 
-### Set up `beskid build` and `beskid run`
+The redistributable supplies `VCRUNTIME140.dll` to Beskid and programs built
+with it. Release engineers building the native runtime kit also need LLVM's
+`llvm-ml` assembler and `clang`; that is separate from ordinary end-user use.
 
-1. Install the Visual Studio 2022 Build Tools (or any Visual Studio 2022
-   edition) with the `Desktop development with C++` workload. Keep the MSVC
-   x64/x86 build tools and a Windows 11 or Windows 10 SDK selected.
-2. Open the `x64 Native Tools Command Prompt for VS 2022` (or run
-   `vcvars64.bat` in your shell). Beskid does not locate Visual Studio by
-   itself: `cl.exe`, `link.exe`, and the `LIB` and `INCLUDE` variables must
-   come from that environment.
-3. Run `beskid build` or `beskid run` from that prompt.
+The setup downloads official vendor packages using the reviewed URLs, sizes,
+and SHA-512 hashes in
+[`windows/prerequisites.lock.json`](../windows/prerequisites.lock.json). The
+setup fails if a download or hash differs; it does not run unverified bytes.
+Visual Studio's bootstrapper downloads the selected C++ workload components
+from Microsoft. Vendor sources and terms are available from
+[Microsoft Visual C++](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170),
+[Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022),
+[Microsoft license terms](https://visualstudio.microsoft.com/license-terms/),
+[LLVM releases](https://github.com/llvm/llvm-project/releases), and
+[LLVM license terms](https://llvm.org/docs/DeveloperPolicy.html#license).
 
-If the tools are missing, the compiler reports `[E4020]` and names the missing
-tool (for example `cl`) or the linker. Programs that `beskid build` produces
-also import `VCRUNTIME140.dll`, so a machine that runs them needs the
-redistributable.
+For unattended runtime-only setup, use `beskid-<version>-windows-amd64.exe
+/quiet /norestart /log setup.log`. Add `InstallDeveloperTools=1` to select the
+developer tools explicitly. The default is `0`, including unattended installs.
+Use the setup EXE rather than the standalone MSI when Visual C++ is missing.
 
-A standalone LLVM `lld-link.exe` does not remove the Build Tools requirement:
-the linker still needs the MSVC and Windows SDK import libraries, and the
-executable bootstrap is compiled with `cl.exe`. The installer does not ship a
-linker.
+## Standalone MSI
 
-### Build-time only: the runtime kit
+The `beskid-<version>-windows-amd64.msi` installs the same Beskid files and
+shows a branded directory picker, but it does not fetch prerequisites. It
+stops with an actionable message unless Visual C++ x64 Redistributable 14.40
+or newer is already installed. It does not install Build Tools, Windows SDK,
+or LLVM. Beskid's `bin` directory is added to the system `PATH` by the MSI;
+open a new shell after installation.
 
-End users do not build the runtime kit. Release engineers who run
-`beskid runtime-kit build-native-host` need, in addition to the Build Tools,
-LLVM for Windows on `PATH`: `llvm-ml` assembles the context-switch and platform
-assembly and `clang` compiles the platform C sources.
+## If setup stops
 
-## Secret required
+- Check the path supplied with `/log` or the setup log linked on the failure
+  page. Find the failed vendor package name and its companion log before
+  retrying.
+- For a network or hash failure, restore connectivity and rerun the same setup
+  EXE. Do not substitute an unverified installer. For a pending restart,
+  restart Windows, then rerun setup if it did not finish.
+- If `beskid build` reports a missing MSVC or SDK component after an opt-in
+  install, inspect the Visual Studio Installer for the C++ workload, x64/x86
+  MSVC tools, and a supported Windows SDK. Confirm LLVM's `lld-link` is
+  installed, then retry from a new ordinary shell.
 
-| Secret | Purpose |
-|---|---|
-| `DISTRIB_GH_PAT` | Download immutable `cli-v<version>` / `lsp-v<version>` binaries from `beskid_compiler`, and upload the built `.msi` and bootstrapper `.exe`. |
+## Release verification
 
-## Obtaining `DISTRIB_GH_PAT`
+Woodpecker packages the MSI and EXE from a qualified, checksummed compiler
+bundle. The Windows packaging job derives the ICO and MSI artwork from the
+checked-in Beskid logo and records the resulting installer SHA-256 hashes in
+`package-result.json`. Packaging does not publish installers. Before a
+release, run the disposable-VM installer matrix from the implementation plan
+for both setup choices, failure/cancel/repair/upgrade paths, and fresh-shell
+CLI/JIT/build/run; record installed MSVC/SDK versions and 100%/150% UI
+screenshots. A passing package job alone does not establish those behaviors.
 
-1. As an owner of `Cyber-Nomad-Collective`, open
-   https://github.com/settings/tokens/new (classic PAT).
-2. **Note:** `Beskid distrib pipeline`.
-3. **Expiration:** 365 days (rotate before expiry).
-4. **Scopes:** select `repo` (full). This grants read on `beskid_compiler`
-   releases and write to upload `.msi` assets. If `beskid_compiler` is in a
-   private org, `repo` is required; fine-grained PATs scoped to just
-   `beskid_compiler` also work and are preferred where feasible.
-5. Generate, copy the `ghp_...` token immediately (shown once).
-6. Add it to the **superrepo** (`Cyber-Nomad-Collective/beskid`) under
-   **Settings → Secrets and variables → Actions → New repository secret**:
-   - Name: `DISTRIB_GH_PAT`
-   - Value: the `ghp_...` token.
-
-## What the MSI does (no secrets needed for this)
-
-The MSI itself is built from `beskid_distrib/windows/beskid.wxs`:
-
-- Installs the verified target bundle (`bin\beskid.exe`, `bin\beskid_lsp.exe`,
-  `bin\beskid-up.exe`, the ABI-v5 runtime kit, corelib, and bundled packages)
-  into `C:\Program Files\Beskid\` (directory picker shown — user can change
-  the path).
-- Stops with a message when the Visual C++ Redistributable (x64) is not
-  installed. The setup `.exe` (WiX Burn bundle, `beskid.bundle.wxs`) embeds
-  Microsoft's `vc_redist.x64.exe` and installs it first when it is missing or
-  older than 14.40. The redistributable stays installed when Beskid is
-  removed. `windows/build-exe.sh` downloads it from
-  `https://aka.ms/vs/17/release/vc_redist.x64.exe` and requires a valid
-  Microsoft Authenticode signature, or uses `BESKID_VC_REDIST_X64` when the
-  caller supplies a verified copy.
-- Adds its `bin` directory to the **system PATH** via the MSI Environment table
-  (`<Environment ... System='yes' Part='last' />`). This survives reboot and
-  applies to all users (per-machine install, `ALLUSERS=1`).
-- Registers an uninstall entry in Add/Remove Programs with the version +
-  publisher + Beskid icon.
-- Upgrades in place (major upgrade via `UpgradeCode`); installing a newer MSI
-  supersedes the older one.
-
-## No code signing (v1)
-
-The MSI is **unsigned**. Windows SmartScreen will show an "unrecognized app"
-warning the first time a user runs it. This is expected for v1. Users click
-**More info → Run anyway**. When a code-signing certificate is later obtained
-(Authenticode OV/EV), add a `signtool sign` step to the `windows-msi` job and
-add secrets `WINDOWS_CERT_PFX` (base64) + `WINDOWS_CERT_PASSWORD`; the WiX
-source already separates build from signing so this is additive.
+The standalone MSI and setup EXE are currently unsigned, so Windows may show
+an unrecognized-app warning. Release engineering must review that warning and
+the pinned vendor signatures before publishing.
