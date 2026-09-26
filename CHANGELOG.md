@@ -9,11 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Recommend a C compiler and libc headers from the Debian package
+  (`Recommends: gcc | c-compiler, libc6-dev`) and install `gcc` and `libc6-dev`
+  in both container images, because `beskid build` and `beskid run` link with
+  the system `cc`, `ar`, and `ranlib`. Document the same requirement for
+  Ubuntu and for macOS (Xcode Command Line Tools).
+- Cover the 0.5 release line in the version-contract tests and guard the
+  documentation and toolchain contracts against regression.
+- Chain the Microsoft Visual C++ 2015-2022 Redistributable (x64) in the
+  Windows setup `.exe`. The bundle embeds the Authenticode-verified
+  `vc_redist.x64.exe`, installs it only when the 14.40+ x64 runtime is missing,
+  and keeps it on uninstall. The standalone MSI stops with an actionable
+  message when the runtime is missing.
+- Document Windows end-user prerequisites: the redistributable for every
+  command, and the non-redistributable MSVC Build Tools and Windows SDK for
+  `beskid build` and `beskid run`.
 - Present macOS releases in a branded Finder DMG with a Beskid.app-to-
   Applications drag-to-install shortcut.
 
 ### Changed
 
+- Describe the Woodpecker release pipeline instead of the retired GitHub Actions
+  one across the README, per-platform guides, `SECRETS.md`, and the Homebrew
+  formula template: `cli-v<version>` plus rolling `cli-stable` / `cli-unstable`
+  releases, and the single `compiler_release_token` secret the release job uses.
+- State plainly that the superrepo's Woodpecker pipelines do not build these
+  container images (the GitHub Actions lane was removed), and document how to
+  build them locally from a verified bundle.
+- Describe the whole installed toolchain, not just the CLI and LSP, in the
+  Debian package description.
 - Check native package and immutable release contracts against Woodpecker build,
   packaging, and publication authority after retirement of the GitHub workflow.
 
@@ -29,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Drop the `BESKID_VERSION` build argument from the compose file and container
+  documentation; neither Dockerfile declares it.
 - Retire Snap distribution completely: remove its classic-confinement recipe,
   Store credentials, operator guides, workflow contract, and published-channel
   claims so it cannot block supported release lanes.

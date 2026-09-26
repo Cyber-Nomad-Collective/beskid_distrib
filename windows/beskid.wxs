@@ -39,6 +39,27 @@
     <Media Id='1' Cabinet='beskid.cab' EmbedCab='yes' />
 
     <!--
+      Visual C++ Redistributable (x64). beskid.exe, beskid_lsp.exe,
+      beskid-up.exe, and the ABI-v5 runtime DLL import VCRUNTIME140.dll. The
+      Burn bundle (beskid.bundle.wxs) installs the runtime before this MSI; a
+      standalone MSI install fails closed with an actionable message instead
+      of installing binaries that cannot start. The MSVC Build Tools and the
+      Windows SDK are not redistributable and are documented, not installed.
+    -->
+    <Property Id='VCREDISTX64INSTALLED'>
+      <RegistrySearch
+        Id='VcRedistX64InstalledSearch'
+        Root='HKLM'
+        Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+        Name='Installed'
+        Type='raw'
+        Bitness='always64' />
+    </Property>
+    <Launch
+      Condition='Installed OR VCREDISTX64INSTALLED = "#1"'
+      Message='Beskid requires the Microsoft Visual C++ 2015-2022 Redistributable (x64). Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe or run the Beskid setup .exe, which installs it automatically.' />
+
+    <!--
       Directory picker. WiX v4 exposes WixUI_InstallDir through the UI
       extension namespace loaded by build-msi.sh.
     -->

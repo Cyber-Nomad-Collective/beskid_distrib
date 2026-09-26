@@ -25,6 +25,21 @@ fi
 [[ "$(windows_installer_version '0.4.481-unstable')" == '0.4.481' ]] || \
   fail 'unstable Windows version projection was not numeric'
 
+# The 0.5 line: multi-digit patch numbers keep both accepted shapes, malformed
+# versions are still rejected, and MSI/Burn metadata stays numeric.
+validate_distribution_version '0.5.0'
+validate_distribution_version '0.5.12'
+validate_distribution_version '0.5.12-unstable'
+for rejected in '0.5' '0.5.0-rc1' 'v0.5.0' '0.05.0' '0.5.0-unstable-1'; do
+  if validate_distribution_version "${rejected}" 2>/dev/null; then
+    fail "malformed release version was accepted: ${rejected}"
+  fi
+done
+[[ "$(windows_installer_version '0.5.12')" == '0.5.12' ]] || \
+  fail '0.5 stable Windows version projection changed the public version'
+[[ "$(windows_installer_version '0.5.12-unstable')" == '0.5.12' ]] || \
+  fail '0.5 unstable Windows version projection was not numeric'
+
 mkdir -p "${tmp}/bin" "${tmp}/fetch" "${tmp}/windows-build" "${tmp}/assets/icons"
 cat >"${tmp}/bin/gh" <<'SH'
 #!/usr/bin/env bash
@@ -268,6 +283,7 @@ grep -Fq 'Name="abi.json"' "${tmp}/windows-build/bundle-files.wxs" || \
   fail 'Windows bundle fragment omitted the runtime kit'
 printf 'ico' >"${tmp}/assets/icons/beskid.ico"
 printf 'png' >"${tmp}/assets/icons/beskid-512.png"
+printf 'redist' >"${tmp}/vc_redist.x64.exe"
 
 # WiX inputs are externally observable installer metadata. The filenames keep
 # the public prerelease identity while WiX receives a deterministic numeric
@@ -277,7 +293,7 @@ printf 'png' >"${tmp}/assets/icons/beskid-512.png"
   PATH="${tmp}/bin:${PATH}" FAKE_WIX_LOG="${tmp}/wix.log" \
     bash "${root}/windows/build-msi.sh" \
       0.4.481-unstable "${tmp}/windows-build" "${tmp}/assets"
-  PATH="${tmp}/bin:${PATH}" FAKE_WIX_LOG="${tmp}/wix.log" \
+  PATH="${tmp}/bin:${PATH}" FAKE_WIX_LOG="${tmp}/wix.log" BESKID_VC_REDIST_X64="${tmp}/vc_redist.x64.exe" \
     bash "${root}/windows/build-exe.sh" \
       0.4.481-unstable "${tmp}/beskid-0.4.481-unstable-windows-amd64.msi" "${tmp}/assets"
 )
@@ -289,6 +305,18 @@ grep -Fq 'wix extension add -g WixToolset.UI.wixext/4.0.6' "${tmp}/wix.log" || \
   fail 'WiX UI extension is not installed at the toolchain version'
 grep -Fq 'wix extension add -g WixToolset.Bal.wixext/4.0.6' "${tmp}/wix.log" || \
   fail 'WiX Burn extension is not installed at the toolchain version'
+grep -Fq 'wix extension add -g WixToolset.Util.wixext/4.0.6' "${tmp}/wix.log" || \
+  fail 'WiX Util extension for the VC++ runtime detection is not installed at the toolchain version'
+grep -Fq -- "-d VcRedistPath=${tmp}/vc_redist.x64.exe" "${tmp}/wix.log" || \
+  fail 'Burn bundle did not receive the Visual C++ Redistributable payload'
+(
+  cd "${tmp}"
+  if PATH="${tmp}/bin:/usr/bin:/bin" FAKE_WIX_LOG="${tmp}/wix.log" BESKID_VC_REDIST_X64="${tmp}/missing-redist.exe" \
+    bash "${root}/windows/build-exe.sh" \
+      0.4.481-unstable "${tmp}/beskid-0.4.481-unstable-windows-amd64.msi" "${tmp}/assets" 2>/dev/null; then
+    fail 'Burn bundle build accepted a missing Visual C++ Redistributable'
+  fi
+)
 grep -Fq -- '-d Version=0.4.481 ' "${tmp}/wix.log" || \
   fail 'WiX did not receive the numeric unstable version projection'
 grep -Fq -- "-d DistribRoot=${root}" "${tmp}/wix.log" || \
