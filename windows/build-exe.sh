@@ -18,6 +18,8 @@ WINDOWS_VERSION="$(windows_installer_version "${VERSION}")"
 
 [[ -f "${MSI_PATH}" ]] || { echo "Missing ${MSI_PATH}" >&2; exit 1; }
 [[ -f "${ASSETS_DIR}/icons/beskid-512.png" ]] || { echo "Missing bootstrapper logo" >&2; exit 1; }
+[[ -s "${ASSETS_DIR}/icons/beskid.ico" ]] || { echo "Missing bootstrapper icon" >&2; exit 1; }
+[[ -s "${DISTRIB_ROOT}/windows/beskid-theme.xml" && -s "${DISTRIB_ROOT}/windows/beskid-theme.wxl" ]] || { echo "Missing bootstrapper theme" >&2; exit 1; }
 
 load_wix_extension WixToolset.Bal.wixext
 load_wix_extension WixToolset.Util.wixext
@@ -35,6 +37,7 @@ wix build "${DISTRIB_ROOT}/windows/beskid.bundle.wxs" "${prerequisites_fragment}
   -d Version="${WINDOWS_VERSION}" \
   -d MsiPath="${MSI_PATH}" \
   -d AssetsDir="${ASSETS_DIR}" \
+  -d DistribRoot="${DISTRIB_ROOT}" \
   -o "${out}"
 
 echo "built ${out}"

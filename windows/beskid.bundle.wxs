@@ -19,11 +19,14 @@
     Name='Beskid'
     Manufacturer='Cyber Nomad Collective'
     Version='$(var.Version)'
+    IconSourceFile='$(var.AssetsDir)\icons\beskid.ico'
     UpgradeCode='68111af0-f0f1-4d30-bcc3-c52ea3166819'>
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication
         LicenseUrl='https://www.apache.org/licenses/LICENSE-2.0'
         Theme='hyperlinkLicense'
+        ThemeFile='$(var.DistribRoot)\windows\beskid-theme.xml'
+        LocalizationFile='$(var.DistribRoot)\windows\beskid-theme.wxl'
         LogoFile='$(var.AssetsDir)\icons\beskid-512.png' />
     </BootstrapperApplication>
     <Variable Name='InstallDeveloperTools' Type='numeric' Value='0' bal:Overridable='yes' />
@@ -36,6 +39,15 @@
       Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
       Value='Installed'
       Result='value'
+      Bitness='always64' />
+
+    <!-- LLVM's NSIS product key is independent of its installation path. -->
+    <util:RegistrySearch
+      Id='LlvmX64Search'
+      Variable='LlvmX64Installed'
+      Root='HKLM'
+      Key='SOFTWARE\LLVM'
+      Result='exists'
       Bitness='always64' />
     <util:RegistrySearch
       Id='VcRedistX64MinorSearch'

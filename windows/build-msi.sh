@@ -36,6 +36,9 @@ command -v node >/dev/null 2>&1 || { echo "Node.js is required to render the WiX
 [[ -f "$BUILD_DIR/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
 [[ -d "$BUILD_DIR/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
 [[ -s "$ASSETS_DIR/icons/beskid.ico" ]] || { echo "Missing $ASSETS_DIR/icons/beskid.ico" >&2; exit 1; }
+for artwork in beskid-msi-banner.png beskid-msi-dialog.png; do
+  [[ -s "$ASSETS_DIR/icons/$artwork" ]] || { echo "Missing $ASSETS_DIR/icons/$artwork" >&2; exit 1; }
+done
 
 out="beskid-${VERSION}-windows-amd64.msi"
 fragment="$(mktemp "${TMPDIR:-/tmp}/beskid-bundle-files.XXXXXX.wxs")"

@@ -78,8 +78,12 @@ const packages = lock.packages.map(item => {
     VsBuildTools2022: '--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100',
     LlvmX64: '/S'
   };
+  // WiX searches cannot enumerate VS Setup instances. The Microsoft
+  // bootstrapper must handle an existing Build Tools instance; VM acceptance
+  // must verify that it does not alter a Community-only installation.
+  const detect = item.id === 'LlvmX64' ? ' DetectCondition="LlvmX64Installed"' : '';
   return `  <PackageGroup Id="${item.id}Group">
-    <ExePackage ${common} InstallCondition="InstallDeveloperTools = 1" InstallArguments="${argumentsById[item.id]}">
+    <ExePackage ${common}${detect} InstallCondition="InstallDeveloperTools = 1" InstallArguments="${argumentsById[item.id]}">
       ${payload}
       <ExitCode Value="3010" Behavior="scheduleReboot" />
     </ExePackage>

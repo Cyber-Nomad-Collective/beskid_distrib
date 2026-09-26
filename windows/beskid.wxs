@@ -44,7 +44,8 @@
       Burn bundle (beskid.bundle.wxs) installs the runtime before this MSI; a
       standalone MSI install fails closed with an actionable message instead
       of installing binaries that cannot start. The MSVC Build Tools and the
-      Windows SDK are not redistributable and are documented, not installed.
+      Windows SDK are not embedded in this MSI. The setup EXE offers them as
+      optional vendor downloads.
     -->
     <Property Id='VCREDISTX64INSTALLED'>
       <RegistrySearch
@@ -55,15 +56,26 @@
         Type='raw'
         Bitness='always64' />
     </Property>
+    <Property Id='VCREDISTX64MINOR'>
+      <RegistrySearch
+        Id='VcRedistX64MinorSearch'
+        Root='HKLM'
+        Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
+        Name='Minor'
+        Type='raw'
+        Bitness='always64' />
+    </Property>
     <Launch
-      Condition='Installed OR VCREDISTX64INSTALLED = "#1"'
-      Message='Beskid requires the Microsoft Visual C++ 2015-2022 Redistributable (x64). Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe or run the Beskid setup .exe, which installs it automatically.' />
+      Condition='Installed OR (VCREDISTX64INSTALLED = "#1" AND VCREDISTX64MINOR &gt;= 40)'
+      Message='Beskid requires the Microsoft Visual C++ 2015-2022 Redistributable (x64), version 14.40 or later. Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe or run the Beskid setup .exe, which installs it automatically.' />
 
     <!--
       Directory picker. WiX v4 exposes WixUI_InstallDir through the UI
       extension namespace loaded by build-msi.sh.
     -->
     <ui:WixUI Id='WixUI_InstallDir' InstallDirectory='INSTALLDIR' />
+    <WixVariable Id='WixUIBannerBmp' Value='$(var.AssetsDir)\icons\beskid-msi-banner.png' />
+    <WixVariable Id='WixUIDialogBmp' Value='$(var.AssetsDir)\icons\beskid-msi-dialog.png' />
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFiles64Folder'>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Based on WiX v4.0.6 HyperlinkTheme.wxl (Microsoft Reciprocal License). -->
+<WixLocalization Culture="en-us" Language="1033" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <String Id="Caption" Value="Beskid Setup" />
+  <String Id="Title" Value="Beskid" />
+  <String Id="CheckingForUpdatesLabel" Value="Checking for updates" />
+  <String Id="UpdateButton" Value="&amp;Update" />
+  <String Id="InstallHeader" Value="Install Beskid" />
+  <String Id="InstallMessage" Value="Install the Beskid CLI and runtime. The Visual C++ runtime will be downloaded if it is missing." />
+  <String Id="DeveloperToolsLabel" Value="Install developer tools (MSVC, Windows SDK, LLVM)" />
+  <String Id="DeveloperToolsWarning" Value="Optional: downloads several GB from Microsoft and LLVM. A restart may be needed. Leave this unchecked for Beskid runtime only." />
+  <String Id="VendorLicenseLinks" Value="Third-party terms: &lt;a href=&quot;https://visualstudio.microsoft.com/license-terms/&quot;&gt;Microsoft&lt;/a&gt; and &lt;a href=&quot;https://llvm.org/docs/DeveloperPolicy.html#license&quot;&gt;LLVM&lt;/a&gt;." />
+  <String Id="ConfirmCancelMessage" Value="Are you sure you want to cancel?" />
+  <String Id="ExecuteUpgradeRelatedBundleMessage" Value="Previous version" />
+  <String Id="HelpHeader" Value="Setup Help" />
+  <String Id="HelpText" Value="/install | /repair | /uninstall - installs, repairs, or uninstalls Beskid.&#xA;/quiet - runs without prompts.&#xA;InstallDeveloperTools=1 - also downloads MSVC Build Tools, Windows SDK, and LLVM.&#xA;/norestart - prevents an automatic restart.&#xA;/log log.txt - writes the setup log to the chosen file." />
+  <String Id="HelpCloseButton" Value="&amp;Close" />
+  <String Id="InstallLicenseLinkText" Value="Beskid &lt;a href=&quot;#&quot;&gt;license terms&lt;/a&gt;." />
+  <String Id="InstallAcceptCheckbox" Value="I &amp;agree to the license terms and conditions" />
+  <String Id="InstallOptionsButton" Value="&amp;Options" />
+  <String Id="InstallInstallButton" Value="&amp;Install" />
+  <String Id="InstallCancelButton" Value="&amp;Cancel" />
+  <String Id="OptionsHeader" Value="Setup Options" />
+  <String Id="OptionsLocationLabel" Value="Install location:" />
+  <String Id="OptionsBrowseButton" Value="&amp;Browse" />
+  <String Id="OptionsToolsNote" Value="The developer-tools choice is on the preceding page. Existing vendor tools are retained during repair or uninstall." />
+  <String Id="OptionsOkButton" Value="&amp;OK" />
+  <String Id="OptionsCancelButton" Value="&amp;Cancel" />
+  <String Id="ProgressHeader" Value="Setup Progress" />
+  <String Id="ProgressLabel" Value="Processing:" />
+  <String Id="OverallProgressPackageText" Value="Initializing..." />
+  <String Id="ProgressDownloadNote" Value="Selected prerequisites download from their vendors. Setup stops if a download or installation fails; check the setup log for the vendor package name." />
+  <String Id="ProgressCancelButton" Value="&amp;Cancel" />
+  <String Id="ModifyHeader" Value="Maintain Beskid" />
+  <String Id="ModifyToolsNote" Value="Repair or remove Beskid. Microsoft and LLVM tools already installed on this computer remain available to other software." />
+  <String Id="ModifyRepairButton" Value="&amp;Repair" />
+  <String Id="ModifyUninstallButton" Value="&amp;Uninstall" />
+  <String Id="ModifyCancelButton" Value="&amp;Cancel" />
+  <String Id="SuccessHeader" Value="Setup Successful" />
+  <String Id="SuccessInstallHeader" Value="Beskid installed" />
+  <String Id="SuccessRepairHeader" Value="Beskid repaired" />
+  <String Id="SuccessUninstallHeader" Value="Beskid removed" />
+  <String Id="SuccessLaunchButton" Value="&amp;Launch" />
+  <String Id="SuccessRestartText" Value="Restart Windows before using Beskid or newly installed developer tools." />
+  <String Id="SuccessRestartButton" Value="&amp;Restart" />
+  <String Id="SuccessCloseButton" Value="&amp;Close" />
+  <String Id="FailureHeader" Value="Setup Failed" />
+  <String Id="FailureInstallHeader" Value="Beskid installation failed" />
+  <String Id="FailureHyperlinkLogText" Value="Setup could not finish. Check the failed vendor package and download in the &lt;a href=&quot;#&quot;&gt;setup log&lt;/a&gt;, then retry." />
+  <String Id="FailureRestartText" Value="Restart Windows to complete rollback before retrying setup." />
+  <String Id="FailureRestartButton" Value="&amp;Restart" />
+  <String Id="FailureCloseButton" Value="&amp;Close" />
+  <String Id="FilesInUseTitle" Value="Files In Use" />
+  <String Id="FilesInUseLabel" Value="The following applications are using files that need to be updated:" />
+  <String Id="FilesInUseNetfxCloseRadioButton" Value="Close the &amp;applications." />
+  <String Id="FilesInUseCloseRadioButton" Value="Close the &amp;applications and attempt to restart them." />
+  <String Id="FilesInUseDontCloseRadioButton" Value="&amp;Do not close applications. A reboot will be required." />
+  <String Id="FilesInUseRetryButton" Value="&amp;Retry" />
+  <String Id="FilesInUseIgnoreButton" Value="&amp;Ignore" />
+  <String Id="FilesInUseExitButton" Value="E&amp;xit" />
+</WixLocalization>

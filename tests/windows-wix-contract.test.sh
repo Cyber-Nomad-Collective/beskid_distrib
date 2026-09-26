@@ -9,6 +9,8 @@ bundle_builder="${root}/windows/build-exe.sh"
 redist_helper="${root}/windows/vc-redist.sh"
 prerequisites_lock="${root}/windows/prerequisites.lock.json"
 prerequisites_renderer="${root}/windows/render-prerequisites.mjs"
+theme="${root}/windows/beskid-theme.xml"
+theme_strings="${root}/windows/beskid-theme.wxl"
 guide="${root}/docs/Windows_Guide.md"
 
 fail() {
@@ -141,11 +143,46 @@ if grep -Fq -- '-d VcRedistPath=' "${bundle_builder}"; then
   fail 'bundle builder still passes an embedded redistributable'
 fi
 
-# A standalone MSI fails closed without the runtime; repair/uninstall stay open.
+# A clean install offers developer tools but leaves them unchecked. The LLVM
+# NSIS product key detects an existing installation; VS vendor behavior is a
+# separate VM acceptance gate because Burn cannot enumerate VS instances.
+node - "${bundle_source}" "${tmp}/prerequisites.wxs" "${theme}" "${theme_strings}" "${msi_source}" <<'NODE' || fail 'branding and developer option contract failed'
+const fs = require('node:fs');
+const [bundlePath, fragmentPath, themePath, stringsPath, msiPath] = process.argv.slice(2);
+const bundle = fs.readFileSync(bundlePath, 'utf8');
+const fragment = fs.readFileSync(fragmentPath, 'utf8');
+const theme = fs.readFileSync(themePath, 'utf8');
+const strings = fs.readFileSync(stringsPath, 'utf8');
+const msi = fs.readFileSync(msiPath, 'utf8');
+if (!/Name='InstallDeveloperTools' Type='numeric' Value='0' bal:Overridable='yes'/.test(bundle)) throw Error('option must default off and allow command-line override');
+if (!/Checkbox\b[^>]*Name="InstallDeveloperTools"/.test(theme)) throw Error('theme lacks bound checkbox');
+if (!/Install developer tools/.test(strings) || !/download/i.test(strings)) throw Error('option or large-download warning missing');
+for (const name of ['VsBuildTools2022', 'LlvmX64']) {
+  const pkg = fragment.match(new RegExp(`<ExePackage\\b[^>]*Id="${name}"[^>]*>`))?.[0];
+  if (!pkg || !pkg.includes('InstallCondition="InstallDeveloperTools = 1"') || !pkg.includes('Permanent="yes"')) throw Error(`${name} is not permanent and opt-in`);
+}
+if (!fragment.match(/Id="LlvmX64"[^>]*DetectCondition="LlvmX64Installed"/)) throw Error('LLVM installed-product detection missing');
+if (!bundle.includes("Key='SOFTWARE\\LLVM'")) throw Error('LLVM NSIS registry key search missing');
+for (const attr of ["IconSourceFile='$(var.AssetsDir)\\icons\\beskid.ico'", "ThemeFile='$(var.DistribRoot)\\windows\\beskid-theme.xml'", "LocalizationFile='$(var.DistribRoot)\\windows\\beskid-theme.wxl'", "LogoFile='$(var.AssetsDir)\\icons\\beskid-512.png'"]) {
+  if (!bundle.includes(attr)) throw Error(`bundle lacks ${attr}`);
+}
+for (const id of ['WixUIBannerBmp', 'WixUIDialogBmp']) {
+  if (!msi.includes(`Id='${id}'`)) throw Error(`MSI lacks ${id}`);
+}
+if (!msi.includes("Property Id='ARPPRODUCTICON' Value='beskid.ico'")) throw Error('MSI ARP icon missing');
+NODE
+
+# A standalone MSI requires the same 14.40+ runtime as Burn; repair/uninstall stay open.
 grep -Fq "Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'" "${msi_source}" || \
   fail 'MSI does not search for the x64 Visual C++ runtime'
-grep -Fq "Condition='Installed OR VCREDISTX64INSTALLED = \"#1\"'" "${msi_source}" || \
-  fail 'MSI does not block installation without the Visual C++ runtime'
+grep -Fq "Property Id='VCREDISTX64MINOR'" "${msi_source}" || \
+  fail 'MSI does not search for the Visual C++ runtime minor version'
+grep -Fq "Name='Minor'" "${msi_source}" || \
+  fail 'MSI does not read the Visual C++ runtime minor version'
+[[ "$(grep -c "Bitness='always64'" "${msi_source}")" -ge 2 ]] || \
+  fail 'MSI registry searches do not both read the 64-bit registry view'
+grep -Fq "Condition='Installed OR (VCREDISTX64INSTALLED = \"#1\" AND VCREDISTX64MINOR &gt;= 40)'" "${msi_source}" || \
+  fail 'MSI does not block installation without the 14.40+ Visual C++ runtime'
 
 # The MSVC Build Tools and the Windows SDK are not redistributable. Neither
 # package may carry them; the guide documents them for `beskid build`/`run`.

@@ -269,6 +269,19 @@ grep -Fq 'Name="abi.json"' "${tmp}/windows-build/bundle-files.wxs" || \
 printf 'ico' >"${tmp}/assets/icons/beskid.ico"
 printf 'png' >"${tmp}/assets/icons/beskid-512.png"
 
+# The generator consumes the one checked-in logo and produces the exact WiX
+# inputs, including the two MSI dialog sizes and a multi-resolution ICO.
+bash "${root}/windows/generate-brand-assets.sh" "${root}/assets" "${tmp}/generated-assets"
+[[ -s "${tmp}/generated-assets/icons/beskid.ico" ]] || fail 'brand generator omitted EXE/MSI icon'
+[[ "$(magick identify -format '%wx%h' "${tmp}/generated-assets/icons/beskid-msi-banner.png")" == '493x58' ]] || fail 'MSI banner size is wrong'
+[[ "$(magick identify -format '%wx%h' "${tmp}/generated-assets/icons/beskid-msi-dialog.png")" == '493x312' ]] || fail 'MSI dialog size is wrong'
+[[ "$(magick identify -format '%wx%h\n' "${tmp}/generated-assets/icons/beskid.ico" | wc -l | tr -d ' ')" -ge 6 ]] || fail 'ICO lacks multiple sizes'
+if bash "${root}/windows/generate-brand-assets.sh" "${tmp}/missing-source" "${tmp}/missing-output" 2>/dev/null; then
+  fail 'brand generator accepted a missing logo source'
+fi
+cp "${tmp}/generated-assets/icons/beskid-msi-banner.png" "${tmp}/assets/icons/"
+cp "${tmp}/generated-assets/icons/beskid-msi-dialog.png" "${tmp}/assets/icons/"
+
 # WiX inputs are externally observable installer metadata. The filenames keep
 # the public prerelease identity while WiX receives a deterministic numeric
 # version and explicitly loaded, version-matched extensions.
@@ -308,9 +321,26 @@ fi
 grep -Fq -- '-d Version=0.4.481 ' "${tmp}/wix.log" || \
   fail 'WiX did not receive the numeric unstable version projection'
 grep -Fq -- "-d DistribRoot=${root}" "${tmp}/wix.log" || \
+  fail 'bundle did not receive the custom-theme source directory'
+grep -Fq -- "-d DistribRoot=${root}" "${tmp}/wix.log" || \
   fail 'WiX did not receive the distribution license source directory'
 if grep -Fq -- '-d Version=0.4.481-unstable' "${tmp}/wix.log"; then
   fail 'WiX received the public prerelease string as installer metadata'
 fi
+
+for missing in beskid.ico beskid-msi-banner.png beskid-msi-dialog.png; do
+  mv "${tmp}/assets/icons/${missing}" "${tmp}/${missing}"
+  if (cd "${tmp}" && PATH="${tmp}/bin:${PATH}" FAKE_WIX_LOG="${tmp}/wix.log" \
+    bash "${root}/windows/build-msi.sh" 0.4.481 "${tmp}/windows-build" "${tmp}/assets" >/dev/null 2>&1); then
+    fail "MSI builder accepted missing ${missing}"
+  fi
+  mv "${tmp}/${missing}" "${tmp}/assets/icons/${missing}"
+done
+mv "${tmp}/assets/icons/beskid.ico" "${tmp}/beskid.ico"
+if (cd "${tmp}" && PATH="${tmp}/bin:${PATH}" FAKE_WIX_LOG="${tmp}/wix.log" \
+  bash "${root}/windows/build-exe.sh" 0.4.481 "${tmp}/beskid-0.4.481-unstable-windows-amd64.msi" "${tmp}/assets" >/dev/null 2>&1); then
+  fail 'bundle builder accepted missing EXE icon'
+fi
+mv "${tmp}/beskid.ico" "${tmp}/assets/icons/beskid.ico"
 
 printf 'Distribution script behavior tests OK\n'

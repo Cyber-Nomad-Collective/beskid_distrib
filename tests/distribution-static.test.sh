@@ -2,8 +2,9 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-ci="${root}/../scripts/ci"
-workflows="${root}/../.woodpecker"
+superrepo="${BESKID_SUPERREPO_ROOT:-${root}/..}"
+ci="${superrepo}/scripts/ci"
+workflows="${superrepo}/.woodpecker"
 packager="${ci}/woodpecker-package-platform.mjs"
 publisher="${ci}/woodpecker-release.sh"
 
