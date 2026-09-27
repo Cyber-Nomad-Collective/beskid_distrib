@@ -143,9 +143,9 @@ if grep -Fq -- '-d VcRedistPath=' "${bundle_builder}"; then
   fail 'bundle builder still passes an embedded redistributable'
 fi
 
-# A clean install offers developer tools but leaves them unchecked. The LLVM
-# NSIS product key detects an existing installation; VS vendor behavior is a
-# separate VM acceptance gate because Burn cannot enumerate VS instances.
+# A clean install offers developer tools but leaves them unchecked. Burn
+# chooses Visual Studio install versus modify for a standard-path instance,
+# and skips an existing standard-path LLVM installation.
 node - "${bundle_source}" "${tmp}/prerequisites.wxs" "${theme}" "${theme_strings}" "${msi_source}" <<'NODE' || fail 'branding and developer option contract failed'
 const fs = require('node:fs');
 const [bundlePath, fragmentPath, themePath, stringsPath, msiPath] = process.argv.slice(2);
@@ -161,8 +161,14 @@ for (const name of ['VsBuildTools2022', 'LlvmX64']) {
   const pkg = fragment.match(new RegExp(`<ExePackage\\b[^>]*Id="${name}"[^>]*>`))?.[0];
   if (!pkg || !pkg.includes('InstallCondition="InstallDeveloperTools = 1"') || !pkg.includes('Permanent="yes"')) throw Error(`${name} is not permanent and opt-in`);
 }
+const buildTools = fragment.match(/<ExePackage\b[^>]*Id="VsBuildTools2022"[\s\S]*?<\/ExePackage>/)?.[0];
+if (!buildTools) throw Error('Build Tools package missing');
+if (/DetectCondition="VsBuildToolsInstalled"/.test(buildTools)) throw Error('Build Tools presence alone must not skip missing components');
+if (!buildTools.includes('Condition="VsBuildToolsInstalled"') || !buildTools.includes('InstallArgument="modify --installPath')) throw Error('existing Build Tools must be modified to complete missing components');
+if (!buildTools.includes('Condition="NOT VsBuildToolsInstalled"') || !buildTools.includes('InstallArgument="--quiet')) throw Error('new Build Tools must use the install command');
 if (!fragment.match(/Id="LlvmX64"[^>]*DetectCondition="LlvmX64Installed"/)) throw Error('LLVM installed-product detection missing');
-if (!bundle.includes("Key='SOFTWARE\\LLVM'")) throw Error('LLVM NSIS registry key search missing');
+if (!bundle.includes("Variable='VsBuildToolsInstalled'") || !bundle.includes("Path='[ProgramFilesFolder]Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\VsDevCmd.bat'")) throw Error('standard Build Tools path search missing');
+if (!bundle.includes("Variable='LlvmX64Installed'") || !bundle.includes("Path='[ProgramFiles64Folder]LLVM\\bin\\lld-link.exe'")) throw Error('standard LLVM path search missing');
 for (const attr of ["IconSourceFile='$(var.AssetsDir)\\icons\\beskid.ico'", "ThemeFile='$(var.DistribRoot)\\windows\\beskid-theme.xml'", "LocalizationFile='$(var.DistribRoot)\\windows\\beskid-theme.wxl'", "LogoFile='$(var.AssetsDir)\\icons\\beskid-512.png'"]) {
   if (!bundle.includes(attr)) throw Error(`bundle lacks ${attr}`);
 }
@@ -175,13 +181,15 @@ NODE
 # A standalone MSI requires the same 14.40+ runtime as Burn; repair/uninstall stay open.
 grep -Fq "Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'" "${msi_source}" || \
   fail 'MSI does not search for the x64 Visual C++ runtime'
-grep -Fq "Property Id='VCREDISTX64MINOR'" "${msi_source}" || \
-  fail 'MSI does not search for the Visual C++ runtime minor version'
-grep -Fq "Name='Minor'" "${msi_source}" || \
-  fail 'MSI does not read the Visual C++ runtime minor version'
-[[ "$(grep -c "Bitness='always64'" "${msi_source}")" -ge 2 ]] || \
-  fail 'MSI registry searches do not both read the 64-bit registry view'
-grep -Fq "Condition='Installed OR (VCREDISTX64INSTALLED = \"#1\" AND VCREDISTX64MINOR &gt;= 40)'" "${msi_source}" || \
+grep -Fq "Property Id='VCREDISTX64DLL'" "${msi_source}" || \
+  fail 'MSI does not search for the versioned Visual C++ runtime DLL'
+grep -Fq "Name='vcruntime140.dll' MinVersion='14.40.0.0'" "${msi_source}" || \
+  fail 'MSI does not require Visual C++ runtime file version 14.40+'
+grep -Fq "Path='[System64Folder]'" "${msi_source}" || \
+  fail 'MSI does not search the 64-bit system folder'
+grep -Fq "Bitness='always64'" "${msi_source}" || \
+  fail 'MSI registry search does not read the 64-bit registry view'
+grep -Fq "Condition='Installed OR (VCREDISTX64INSTALLED = \"#1\" AND VCREDISTX64DLL)'" "${msi_source}" || \
   fail 'MSI does not block installation without the 14.40+ Visual C++ runtime'
 
 # The MSVC Build Tools and the Windows SDK are not redistributable. Neither

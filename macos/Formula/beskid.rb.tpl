@@ -29,7 +29,7 @@ class Beskid < Formula
   end
 
   def install
-    libexec.install "bin", "lib", "beskid_corelib", "packages", "release-version.txt"
+    libexec.install "bin", "lib", "beskid_corelib", "release-version.txt"
     bin.write_exec_script libexec/"bin/beskid"
     bin.write_exec_script libexec/"bin/beskid_lsp"
     bin.write_exec_script libexec/"bin/beskid-up"

@@ -11,8 +11,14 @@ DISTRIB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 [[ -x "${BUILD_DIR}/bin/beskid" ]] || { echo "Missing executable ${BUILD_DIR}/bin/beskid" >&2; exit 1; }
 [[ -x "${BUILD_DIR}/bin/beskid_lsp" ]] || { echo "Missing executable ${BUILD_DIR}/bin/beskid_lsp" >&2; exit 1; }
 [[ -x "${BUILD_DIR}/bin/beskid-up" ]] || { echo "Missing executable ${BUILD_DIR}/bin/beskid-up" >&2; exit 1; }
-[[ -d "${BUILD_DIR}/lib/beskid-runtime/abi-5" ]] || { echo "Missing ABI-v5 runtime kit" >&2; exit 1; }
-[[ -f "${BUILD_DIR}/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
+for profile in debug release; do
+  [[ -f "${BUILD_DIR}/lib/beskid-runtime/abi-5/aarch64-apple-darwin/${profile}/abi.json" ]] || {
+    echo "Missing ABI-v5 ${profile} runtime kit" >&2; exit 1;
+  }
+done
+[[ -f "${BUILD_DIR}/beskid_corelib/.beskid-bundle.sha256" ]] || { echo "Missing managed Corelib marker" >&2; exit 1; }
+[[ -f "${BUILD_DIR}/beskid_corelib/CoreLib.bws" ]] || { echo "Missing Corelib workspace manifest" >&2; exit 1; }
+[[ -f "${BUILD_DIR}/beskid_corelib/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
 [[ -f "${ASSETS_DIR}/icons/beskid-512.png" ]] || { echo "Missing app icon source" >&2; exit 1; }
 [[ -f "${ASSETS_DIR}/dmg-background.png" ]] || { echo "Missing DMG background image" >&2; exit 1; }
 

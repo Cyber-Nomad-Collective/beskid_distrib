@@ -7,7 +7,7 @@
 #
 # Usage: build-msi.sh <version> <build-dir> <assets-dir>
 #   version    resolved release version (e.g. 0.4.0 or 0.4.1-unstable)
-#   build-dir  verified target bundle root (bin + ABI-v5 lib + corelib/packages)
+#   build-dir  verified target bundle root (bin + ABI-v5 lib + managed Corelib workspace)
 #   assets-dir beskid_distrib/assets (for beskid.ico)
 #
 # Output: beskid-<version>-windows-amd64.msi in the caller's CWD.
@@ -32,9 +32,15 @@ command -v node >/dev/null 2>&1 || { echo "Node.js is required to render the WiX
 [[ -f "$BUILD_DIR/bin/beskid.exe" ]] || { echo "Missing $BUILD_DIR/bin/beskid.exe" >&2; exit 1; }
 [[ -f "$BUILD_DIR/bin/beskid_lsp.exe" ]] || { echo "Missing $BUILD_DIR/bin/beskid_lsp.exe" >&2; exit 1; }
 [[ -f "$BUILD_DIR/bin/beskid-up.exe" ]] || { echo "Missing $BUILD_DIR/bin/beskid-up.exe" >&2; exit 1; }
-[[ -d "$BUILD_DIR/lib/beskid-runtime/abi-5" ]] || { echo "Missing ABI-v5 runtime kit" >&2; exit 1; }
-[[ -f "$BUILD_DIR/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
-[[ -d "$BUILD_DIR/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
+for profile in debug release; do
+  [[ -f "$BUILD_DIR/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/$profile/abi.json" ]] || {
+    echo "Missing ABI-v5 $profile runtime kit" >&2; exit 1;
+  }
+done
+[[ -f "$BUILD_DIR/beskid_corelib/.beskid-bundle.sha256" ]] || { echo "Missing managed Corelib marker" >&2; exit 1; }
+[[ -f "$BUILD_DIR/beskid_corelib/CoreLib.bws" ]] || { echo "Missing Corelib workspace manifest" >&2; exit 1; }
+[[ -f "$BUILD_DIR/beskid_corelib/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
+[[ -d "$BUILD_DIR/beskid_corelib/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
 [[ -s "$ASSETS_DIR/icons/beskid.ico" ]] || { echo "Missing $ASSETS_DIR/icons/beskid.ico" >&2; exit 1; }
 for artwork in beskid-msi-banner.png beskid-msi-dialog.png; do
   [[ -s "$ASSETS_DIR/icons/$artwork" ]] || { echo "Missing $ASSETS_DIR/icons/$artwork" >&2; exit 1; }

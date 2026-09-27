@@ -40,8 +40,9 @@ native host. Packaging records checksums and does not publish. Stable
 publication is a separate reviewed manual operation.
 
 Every supported package preserves one install prefix: `bin/`,
-`lib/beskid-runtime/abi-5/`, `beskid_corelib/`, `packages/`, and
-`release-version.txt`. The CLI derives the runtime kit and corelib from its
+`lib/beskid-runtime/abi-5/` (debug and release), the managed
+`beskid_corelib/` workspace (including its `packages/` and integrity marker),
+and `release-version.txt`. The CLI derives the runtime kit and corelib from its
 own executable under `<prefix>/bin`, so installed packages and OCI images do
 not require `BESKID_RUNTIME_PREFIX` or `BESKID_CORELIB_ROOT`.
 

@@ -75,16 +75,23 @@ const packages = lock.packages.map(item => {
       <ExitCode Value="3010" Behavior="scheduleReboot" />
     </ExePackage>
   </PackageGroup>`;
-  const argumentsById = {
-    VsBuildTools2022: '--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100',
-    LlvmX64: '/S'
-  };
-  // WiX searches cannot enumerate VS Setup instances. The Microsoft
-  // bootstrapper must handle an existing Build Tools instance; VM acceptance
-  // must verify that it does not alter a Community-only installation.
-  const detect = item.id === 'LlvmX64' ? ' DetectCondition="LlvmX64Installed"' : '';
+  if (item.id === 'VsBuildTools2022') {
+    // VsDevCmd.bat proves only that an instance exists, not that it has the
+    // requested x64 compiler and SDK. The same signed bootstrapper supports
+    // Microsoft's modify verb; running it on an existing instance completes
+    // missing components and is a no-op when they are already present.
+    const components = '--add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100';
+    return `  <PackageGroup Id="VsBuildTools2022Group">
+    <ExePackage ${common} InstallCondition="InstallDeveloperTools = 1">
+      ${payload}
+      <CommandLine Condition="VsBuildToolsInstalled" InstallArgument="modify --installPath &quot;[ProgramFilesFolder]Microsoft Visual Studio\\2022\\BuildTools&quot; --quiet --wait --norestart ${components}" />
+      <CommandLine Condition="NOT VsBuildToolsInstalled" InstallArgument="--quiet --wait --norestart ${components}" />
+      <ExitCode Value="3010" Behavior="scheduleReboot" />
+    </ExePackage>
+  </PackageGroup>`;
+  }
   return `  <PackageGroup Id="${item.id}Group">
-    <ExePackage ${common}${detect} InstallCondition="InstallDeveloperTools = 1" InstallArguments="${argumentsById[item.id]}">
+    <ExePackage ${common} DetectCondition="LlvmX64Installed" InstallCondition="InstallDeveloperTools = 1" InstallArguments="/S">
       ${payload}
       <ExitCode Value="3010" Behavior="scheduleReboot" />
     </ExePackage>

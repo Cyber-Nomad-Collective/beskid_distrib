@@ -25,8 +25,9 @@ docker run ghcr.io/cyber-nomad-collective/beskid:0.5.2 --version
 ```
 
 The complete verified target bundle is installed at `/opt/beskid`. Its
-`bin`, ABI-v5 runtime kit, corelib, packages, and version marker remain under
-that single prefix; no Beskid runtime/corelib environment variables are
+`bin`, both ABI-v5 runtime-kit profiles, the marker-bearing Corelib workspace
+with its packages, and the version marker remain under that single prefix;
+no Beskid runtime/corelib environment variables are
 required.
 
 ## GitHub Actions

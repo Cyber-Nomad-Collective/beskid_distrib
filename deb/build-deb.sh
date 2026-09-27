@@ -9,7 +9,7 @@
 #
 # Usage: build-deb.sh <version> <build-dir>
 #   version    resolved semver (e.g. 0.4.0)
-#   build-dir  verified target bundle root (bin + ABI-v5 lib + corelib/packages)
+#   build-dir  verified target bundle root (bin + ABI-v5 lib + managed Corelib workspace)
 #
 # Output: beskid-<version>-amd64.deb in the caller's CWD.
 set -euo pipefail
@@ -25,9 +25,15 @@ UP_BIN="${BUILD_DIR}/bin/beskid-up"
 [[ -f "$CLI_BIN" ]] || { echo "Missing $CLI_BIN" >&2; exit 1; }
 [[ -f "$LSP_BIN" ]] || { echo "Missing $LSP_BIN" >&2; exit 1; }
 [[ -f "$UP_BIN" ]] || { echo "Missing $UP_BIN" >&2; exit 1; }
-[[ -d "${BUILD_DIR}/lib/beskid-runtime/abi-5" ]] || { echo "Missing ABI-v5 runtime kit" >&2; exit 1; }
-[[ -f "${BUILD_DIR}/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
-[[ -d "${BUILD_DIR}/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
+for profile in debug release; do
+  [[ -f "${BUILD_DIR}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/${profile}/abi.json" ]] || {
+    echo "Missing ABI-v5 ${profile} runtime kit" >&2; exit 1;
+  }
+done
+[[ -f "${BUILD_DIR}/beskid_corelib/.beskid-bundle.sha256" ]] || { echo "Missing managed Corelib marker" >&2; exit 1; }
+[[ -f "${BUILD_DIR}/beskid_corelib/CoreLib.bws" ]] || { echo "Missing Corelib workspace manifest" >&2; exit 1; }
+[[ -f "${BUILD_DIR}/beskid_corelib/beskid_corelib/corelib.bproj" ]] || { echo "Missing bundled corelib" >&2; exit 1; }
+[[ -d "${BUILD_DIR}/beskid_corelib/packages" ]] || { echo "Missing bundled packages" >&2; exit 1; }
 
 # Assemble the package tree under a clean staging dir.
 STAGE="$(mktemp -d)"
@@ -40,7 +46,6 @@ mkdir -p "${PKGROOT}/usr/bin" "${PKGROOT}/usr/share/doc/beskid" "${PKGROOT}/DEBI
 cp -a "${BUILD_DIR}/bin/." "${PKGROOT}/usr/bin/"
 cp -a "${BUILD_DIR}/lib" "${PKGROOT}/usr/lib"
 cp -a "${BUILD_DIR}/beskid_corelib" "${PKGROOT}/usr/beskid_corelib"
-cp -a "${BUILD_DIR}/packages" "${PKGROOT}/usr/packages"
 cp -a "${BUILD_DIR}/release-version.txt" "${PKGROOT}/usr/release-version.txt"
 chmod 0755 "${PKGROOT}/usr/bin/beskid" "${PKGROOT}/usr/bin/beskid_lsp" "${PKGROOT}/usr/bin/beskid-up"
 install -m0644 "${DISTRIB_ROOT}/LICENSE" "${PKGROOT}/usr/share/doc/beskid/copyright"

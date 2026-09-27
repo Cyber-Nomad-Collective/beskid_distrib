@@ -41,14 +41,18 @@
       Result='value'
       Bitness='always64' />
 
-    <!-- LLVM's NSIS product key is independent of its installation path. -->
-    <util:RegistrySearch
-      Id='LlvmX64Search'
+    <!-- Skip already installed standard-path developer tools. Their vendor
+         bootstrappers are not idempotent install commands. -->
+    <util:FileSearch
+      Id='VsBuildToolsInstalledSearch'
+      Variable='VsBuildToolsInstalled'
+      Path='[ProgramFilesFolder]Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat'
+      Result='exists' />
+    <util:FileSearch
+      Id='LlvmX64InstalledSearch'
       Variable='LlvmX64Installed'
-      Root='HKLM'
-      Key='SOFTWARE\LLVM'
-      Result='exists'
-      Bitness='always64' />
+      Path='[ProgramFiles64Folder]LLVM\bin\lld-link.exe'
+      Result='exists' />
     <util:RegistrySearch
       Id='VcRedistX64MinorSearch'
       After='VcRedistX64InstalledSearch'

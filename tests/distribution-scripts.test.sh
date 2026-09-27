@@ -192,15 +192,19 @@ fallback="$({
 bundle_root="${tmp}/bundle-source/beskid-0.4.481-x86_64-unknown-linux-gnu"
 mkdir -p \
   "${bundle_root}/bin" \
+  "${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/debug" \
   "${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release" \
-  "${bundle_root}/beskid_corelib" \
-  "${bundle_root}/packages/foundation"
+  "${bundle_root}/beskid_corelib/beskid_corelib" \
+  "${bundle_root}/beskid_corelib/packages/foundation"
 printf 'cli' >"${bundle_root}/bin/beskid"
 printf 'lsp' >"${bundle_root}/bin/beskid_lsp"
 printf 'updater' >"${bundle_root}/bin/beskid-up"
 printf '{}\n' >"${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release/abi.json"
-printf 'project { name = "corelib" }\n' >"${bundle_root}/beskid_corelib/corelib.bproj"
-printf 'project { name = "corelib_foundation" }\n' >"${bundle_root}/packages/foundation/corelib_foundation.bproj"
+printf '{}\n' >"${bundle_root}/lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/debug/abi.json"
+printf 'project { name = "corelib" }\n' >"${bundle_root}/beskid_corelib/beskid_corelib/corelib.bproj"
+printf 'project { name = "corelib_foundation" }\n' >"${bundle_root}/beskid_corelib/packages/foundation/corelib_foundation.bproj"
+printf 'workspace { name = "corelib" }\n' >"${bundle_root}/beskid_corelib/CoreLib.bws"
+printf '%064d\n' 0 >"${bundle_root}/beskid_corelib/.beskid-bundle.sha256"
 printf '0.4.481\n' >"${bundle_root}/release-version.txt"
 tar -C "${tmp}/bundle-source" -czf "${tmp}/valid-bundle.tar.gz" "$(basename "${bundle_root}")"
 
@@ -210,7 +214,7 @@ PATH="${tmp}/bin:${PATH}" FAKE_GH_LOG="${tmp}/gh.log" \
   FAKE_ASSET_FILE="${tmp}/valid-bundle.tar.gz" GH_TOKEN=test \
   bash "${root}/scripts/fetch-release-bundle.sh" \
     0.4.481 x86_64-unknown-linux-gnu "${tmp}/fetched-bundle"
-[[ -f "${tmp}/fetched-bundle/beskid_corelib/corelib.bproj" ]] || \
+[[ -f "${tmp}/fetched-bundle/beskid_corelib/beskid_corelib/corelib.bproj" ]] || \
   fail 'verified bundle fetch did not expose the complete target bundle'
 grep -Fq 'release download v0.4.481' "${tmp}/gh.log" || \
   fail 'bundle fetch did not use the immutable complete-bundle release'
@@ -220,7 +224,11 @@ bash "${root}/scripts/extract-release-bundle.sh" \
 for required in \
   bin/beskid bin/beskid_lsp bin/beskid-up \
   lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/release/abi.json \
-  beskid_corelib/corelib.bproj packages/foundation/corelib_foundation.bproj \
+  lib/beskid-runtime/abi-5/x86_64-unknown-linux-gnu/debug/abi.json \
+  beskid_corelib/.beskid-bundle.sha256 \
+  beskid_corelib/CoreLib.bws \
+  beskid_corelib/beskid_corelib/corelib.bproj \
+  beskid_corelib/packages/foundation/corelib_foundation.bproj \
   release-version.txt; do
   [[ -f "${tmp}/extracted/${required}" ]] || fail "bundle extraction omitted ${required}"
 done
@@ -238,25 +246,29 @@ fi
 # before extraction so a malformed release bundle cannot write through a link
 # outside the atomic staging directory.
 printf '0.4.481\n' >"${bundle_root}/release-version.txt"
-ln -s /tmp "${bundle_root}/packages/escape-link"
+ln -s /tmp "${bundle_root}/beskid_corelib/packages/escape-link"
 tar -C "${tmp}/bundle-source" -czf "${tmp}/linked-bundle.tar.gz" "$(basename "${bundle_root}")"
 if bash "${root}/scripts/extract-release-bundle.sh" \
   "${tmp}/linked-bundle.tar.gz" 0.4.481 x86_64-unknown-linux-gnu "${tmp}/linked-rejected"; then
   fail 'bundle extraction accepted a symbolic link'
 fi
 [[ ! -e "${tmp}/linked-rejected" ]] || fail 'linked bundle escaped extraction staging'
-rm "${bundle_root}/packages/escape-link"
+rm "${bundle_root}/beskid_corelib/packages/escape-link"
 
 mkdir -p \
   "${tmp}/windows-build/bin" \
+  "${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/debug" \
   "${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/release" \
-  "${tmp}/windows-build/beskid_corelib" \
-  "${tmp}/windows-build/packages"
+  "${tmp}/windows-build/beskid_corelib/beskid_corelib" \
+  "${tmp}/windows-build/beskid_corelib/packages"
 : >"${tmp}/windows-build/bin/beskid.exe"
 : >"${tmp}/windows-build/bin/beskid_lsp.exe"
 : >"${tmp}/windows-build/bin/beskid-up.exe"
 : >"${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/release/abi.json"
-: >"${tmp}/windows-build/beskid_corelib/corelib.bproj"
+: >"${tmp}/windows-build/lib/beskid-runtime/abi-5/x86_64-pc-windows-msvc/debug/abi.json"
+: >"${tmp}/windows-build/beskid_corelib/beskid_corelib/corelib.bproj"
+: >"${tmp}/windows-build/beskid_corelib/.beskid-bundle.sha256"
+: >"${tmp}/windows-build/beskid_corelib/CoreLib.bws"
 
 node "${root}/windows/render-bundle-fragment.mjs" \
   "${tmp}/windows-build" "${tmp}/windows-build/bundle-files.wxs"

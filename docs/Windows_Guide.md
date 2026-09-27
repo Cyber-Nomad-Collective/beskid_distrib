@@ -20,8 +20,12 @@ LLVM)** option:
 `beskid run` links an executable, so it requires the native tools too. The
 compiler discovers the installed x64 toolchain for its child processes; you
 do not need to open the Visual Studio Native Tools prompt or set global
-`LIB`/`INCLUDE` variables. An existing complete toolchain may already satisfy
-the requirement. The installer retains shared Microsoft and LLVM prerequisites
+`LIB`/`INCLUDE` variables. An existing standard-path Build Tools installation
+is modified to add any missing selected x64 compiler and SDK components;
+re-running that modification on a complete installation is harmless. Selecting
+developer tools still downloads the pinned Visual Studio bootstrapper for this
+check, even when the installed components are complete. The
+installer retains shared Microsoft and LLVM prerequisites
 when you repair or remove Beskid.
 
 The redistributable supplies `VCRUNTIME140.dll` to Beskid and programs built
@@ -112,9 +116,10 @@ Use a fresh snapshot or a controlled predecessor state for each case:
 | `runtime`, `developer` | Clean VM with no Beskid or developer tools; leave the option off/on respectively. |
 | `community` | VS Community installed, no Build Tools product; verify Community remains and Build Tools is added. |
 | `preexisting` | Complete Build Tools, SDK, and LLVM already installed. |
+| Partial Build Tools | On a disposable clone, remove the selected Windows SDK component while retaining Build Tools and `VsDevCmd.bat`; verify the opt-in setup restores the component and `beskid build`/`beskid run` pass. |
 | `offline` | Clean VM with vendor network access disabled; capture the failed setup log and exit code. |
 | `hash-failure` | Clean VM with a deliberately mismatched remote-payload hash test bundle; capture its failed log and exit code. Keep the released setup EXE separately for release-hash comparison. |
-| `cancel` | Clean VM; cancel through the UI during a vendor download. The recorder currently fails closed for this case until automated UI cancellation and trusted provenance are implemented. |
+| `cancel` | Clean VM; cancel through the UI during a vendor download. The recorder verifies that cancellation followed the download start and preceded payload acquisition. |
 | `repair-deselect` | Prior opt-in install; repair with `InstallDeveloperTools=0`. |
 | `upgrade` | Prior Beskid version installed; pass `-PriorVersion`. |
 | `uninstall` | Current Beskid installed with shared prerequisites present. |
@@ -122,8 +127,9 @@ Use a fresh snapshot or a controlled predecessor state for each case:
 For `offline`, the recorder runs the released setup EXE on a prepared offline
 VM. For `hash-failure`, pass `-ObservedSetupExe` with a deliberately altered
 test bundle; the recorder runs it and checks the failure log, absent Beskid
-install, and retained preexisting vendor tools. `cancel` currently stops with
-an explicit unsupported-case error. Collect actual screenshots named
+install, and retained preexisting vendor tools. For `cancel`, the recorder
+starts passive setup, closes its progress window during a vendor download,
+and checks Burn's ordered cancellation log. Collect actual screenshots named
 `welcome-100.png`, `welcome-150.png`, `options-100.png`, `options-150.png`,
 `progress-100.png`, `progress-150.png`, `success-100.png`,
 `success-150.png`, `failure-100.png`, `failure-150.png`,

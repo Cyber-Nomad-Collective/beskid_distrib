@@ -45,6 +45,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Detect preexisting standard-path MSVC Build Tools and complete missing x64
+  compiler/SDK components with the vendor bootstrapper's supported modify
+  operation instead of skipping a partial installation; detect existing LLVM
+  before offering opt-in installation. Check the actual x64 VC++ runtime DLL version in the standalone
+  MSI because MSI raw DWORD registry searches return prefixed values such as
+  `#44` rather than bare numbers.
+- Require both runtime-kit profiles and the complete marker-bearing Corelib
+  workspace inside release bundles and all native installers, matching the
+  installed compiler's default build/run profile, Corelib discovery, and
+  integrity checks.
 - Download LLVM from its official versioned release URL instead of an expired
   GitHub CDN redirect, while retaining the locked hash and attestation checks.
 - Write the branded macOS DMG layout directly through `dmgbuild`, avoiding

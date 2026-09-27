@@ -56,17 +56,16 @@
         Type='raw'
         Bitness='always64' />
     </Property>
-    <Property Id='VCREDISTX64MINOR'>
-      <RegistrySearch
-        Id='VcRedistX64MinorSearch'
-        Root='HKLM'
-        Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'
-        Name='Minor'
-        Type='raw'
-        Bitness='always64' />
+    <!-- MSI raw DWORD searches return strings such as "#44", so comparing the
+         registry Minor value numerically would reject a valid 14.44 install.
+         AppSearch checks the actual 64-bit runtime DLL version instead. -->
+    <Property Id='VCREDISTX64DLL'>
+      <DirectorySearch Id='VcRedistX64SystemSearch' Path='[System64Folder]'>
+        <FileSearch Name='vcruntime140.dll' MinVersion='14.40.0.0' />
+      </DirectorySearch>
     </Property>
     <Launch
-      Condition='Installed OR (VCREDISTX64INSTALLED = "#1" AND VCREDISTX64MINOR &gt;= 40)'
+      Condition='Installed OR (VCREDISTX64INSTALLED = "#1" AND VCREDISTX64DLL)'
       Message='Beskid requires the Microsoft Visual C++ 2015-2022 Redistributable (x64), version 14.40 or later. Install it from https://aka.ms/vs/17/release/vc_redist.x64.exe or run the Beskid setup .exe, which installs it automatically.' />
 
     <!--

@@ -60,12 +60,16 @@ for binary in beskid beskid_lsp beskid-up; do
     exit 1
   }
 done
-[[ -f "${bundle}/lib/beskid-runtime/abi-5/${TARGET}/release/abi.json" ]] || {
-  echo "Bundle omitted the exact ABI-v5 release kit for ${TARGET}" >&2
-  exit 1
-}
-[[ -f "${bundle}/beskid_corelib/corelib.bproj" ]] || { echo 'Bundle omitted corelib.' >&2; exit 1; }
-[[ -d "${bundle}/packages" ]] || { echo 'Bundle omitted bundled packages.' >&2; exit 1; }
+for profile in debug release; do
+  [[ -f "${bundle}/lib/beskid-runtime/abi-5/${TARGET}/${profile}/abi.json" ]] || {
+    echo "Bundle omitted the exact ABI-v5 ${profile} kit for ${TARGET}" >&2
+    exit 1
+  }
+done
+[[ -f "${bundle}/beskid_corelib/.beskid-bundle.sha256" ]] || { echo 'Bundle omitted managed Corelib marker.' >&2; exit 1; }
+[[ -f "${bundle}/beskid_corelib/CoreLib.bws" ]] || { echo 'Bundle omitted Corelib workspace manifest.' >&2; exit 1; }
+[[ -f "${bundle}/beskid_corelib/beskid_corelib/corelib.bproj" ]] || { echo 'Bundle omitted corelib.' >&2; exit 1; }
+[[ -d "${bundle}/beskid_corelib/packages" ]] || { echo 'Bundle omitted bundled packages.' >&2; exit 1; }
 [[ -f "${bundle}/release-version.txt" ]] || { echo 'Bundle omitted release-version.txt.' >&2; exit 1; }
 printf '%s\n' "${VERSION}" | cmp -s - "${bundle}/release-version.txt" || {
   echo 'Bundle release-version.txt does not match the requested version exactly.' >&2
