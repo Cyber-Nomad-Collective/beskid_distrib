@@ -39,9 +39,10 @@ for (const [index, item] of lock.packages.entries()) {
   ValidateUrl(item.sourceUrl, `${item.id}.sourceUrl`);
   ValidateUrl(item.licenseUrl, `${item.id}.licenseUrl`);
   if (item.id === 'LlvmX64') {
-    if (url.hostname !== 'release-assets.githubusercontent.com' ||
-      !/^\/github-production-release-asset\/75821432\/[0-9a-f-]{36}$/i.test(url.pathname)) {
-      throw new Error('LLVM URL must identify the fixed GitHub release-asset object');
+    // The CDN asset URL expires. Use LLVM's official release permalink; the
+    // locked size/hash and signed attestation still bind the exact bytes.
+    if (url.href !== `https://github.com/llvm/llvm-project/releases/download/llvmorg-${item.version}/${item.name}`) {
+      throw new Error('LLVM URL must identify the locked official release installer');
     }
     const attestation = ValidateUrl(item.attestationUrl, `${item.id}.attestationUrl`, true);
     if (attestation.hostname !== 'github.com' || attestation.pathname !== `/llvm/llvm-project/releases/download/llvmorg-${item.version}/${item.name}.jsonl` ||

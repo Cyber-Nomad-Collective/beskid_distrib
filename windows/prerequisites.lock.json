@@ -31,7 +31,7 @@
       "product": "LLVM Windows x64 installer",
       "version": "22.1.8",
       "name": "LLVM-22.1.8-win64.exe",
-      "url": "https://release-assets.githubusercontent.com/github-production-release-asset/75821432/23107385-9dc5-4d5b-825b-b78a2eaa7063",
+      "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe",
       "sha512": "c307766ec43560cb0072818115a5b29ebfc7d2d3fb2537daf978bcd405189474c218d86f13429484bc601bacf551704e35849a365dd0a282afb2f0095e401baa",
       "size": 455545840,
       "sourceUrl": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.8",

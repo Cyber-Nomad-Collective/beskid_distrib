@@ -50,20 +50,20 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
 node "${prerequisites_renderer}" "${prerequisites_lock}" "${tmp}/prerequisites.wxs" || \
   fail 'locked prerequisite fragment did not render'
-node - "${prerequisites_lock}" <<'NODE' || fail 'LLVM payload URL is replaceable or not directly downloadable'
+node - "${prerequisites_lock}" <<'NODE' || fail 'LLVM payload URL is not the pinned official release download'
 const fs = require('node:fs');
 const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const llvm = lock.packages.find(packageItem => packageItem.id === 'LlvmX64');
-if (!/^https:\/\/release-assets\.githubusercontent\.com\/github-production-release-asset\/75821432\/[0-9a-f-]{36}$/.test(llvm.url)) process.exit(1);
+if (llvm.url !== `https://github.com/llvm/llvm-project/releases/download/llvmorg-${llvm.version}/${llvm.name}`) process.exit(1);
 NODE
 node - "${prerequisites_lock}" "${tmp}/replaceable.json" <<'NODE'
 const fs = require('node:fs');
 const lock = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-lock.packages[2].url = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-win64.exe';
+lock.packages[2].url = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.7/LLVM-22.1.8-win64.exe';
 fs.writeFileSync(process.argv[3], JSON.stringify(lock));
 NODE
 if node "${prerequisites_renderer}" "${tmp}/replaceable.json" "${tmp}/replaceable.wxs" 2>/dev/null; then
-  fail 'prerequisite renderer accepted a replaceable LLVM release-tag URL'
+  fail 'prerequisite renderer accepted an LLVM URL with the wrong release tag'
 fi
 for field in url sha512 size; do
   node - "${prerequisites_lock}" "${tmp}/bad-${field}.json" "${field}" <<'NODE'

@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Download LLVM from its official versioned release URL instead of an expired
+  GitHub CDN redirect, while retaining the locked hash and attestation checks.
 - Write the branded macOS DMG layout directly through `dmgbuild`, avoiding
   Finder AppleEvents that time out in non-interactive build sessions.
 - Build the Windows MSI explicitly as x64, use WiX v4-compatible UTF-8 and
