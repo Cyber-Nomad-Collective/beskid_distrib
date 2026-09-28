@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Make the Windows setup directory choice effective: pass the branded Options
+  path to MSI `INSTALLDIR`, default it to Program Files, and block an empty
+  path even after returning through Options.
 - Detect preexisting standard-path MSVC Build Tools and complete missing x64
   compiler/SDK components with the vendor bootstrapper's supported modify
   operation instead of skipping a partial installation; detect existing LLVM

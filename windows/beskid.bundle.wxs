@@ -30,6 +30,8 @@
         LogoFile='$(var.AssetsDir)\icons\beskid-512.png' />
     </BootstrapperApplication>
     <Variable Name='InstallDeveloperTools' Type='numeric' Value='0' bal:Overridable='yes' />
+    <Variable Name='InstallFolder' Type='formatted' Value='[ProgramFiles64Folder]\Beskid' bal:Overridable='yes' />
+    <bal:Condition Condition='InstallFolder &lt;&gt; ""' Message='$(loc.InstallFolderRequired)' />
 
     <!-- The runtime writes these values under the 64-bit registry view. -->
     <util:RegistrySearch
@@ -67,7 +69,9 @@
       <PackageGroupRef Id='VcRedistX64Group' />
       <PackageGroupRef Id='VsBuildTools2022Group' />
       <PackageGroupRef Id='LlvmX64Group' />
-      <MsiPackage SourceFile='$(var.MsiPath)' />
+      <MsiPackage SourceFile='$(var.MsiPath)'>
+        <MsiProperty Name='INSTALLDIR' Value='[InstallFolder]' />
+      </MsiPackage>
     </Chain>
   </Bundle>
 </Wix>

@@ -178,6 +178,100 @@ for (const id of ['WixUIBannerBmp', 'WixUIDialogBmp']) {
 if (!msi.includes("Property Id='ARPPRODUCTICON' Value='beskid.ico'")) throw Error('MSI ARP icon missing');
 NODE
 
+# Exercise the Burn-to-MSI directory flow from parsed WiX authoring. The two
+# installer outcomes below model the formatted Burn variable resolution and
+# the MSI property handoff used by the real bundle.
+python3 - "${bundle_source}" "${theme}" "${theme_strings}" <<'PY' || fail 'Burn install-folder behavior contract failed'
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+bundle_path, theme_path, strings_path = sys.argv[1:]
+bundle = ET.parse(bundle_path).getroot().find('w:Bundle', {'w': 'http://wixtoolset.org/schemas/v4/wxs'})
+theme = ET.parse(theme_path).getroot()
+strings = ET.parse(strings_path).getroot()
+ns = {'w': 'http://wixtoolset.org/schemas/v4/wxs', 'bal': 'http://wixtoolset.org/schemas/v4/wxs/bal', 'thm': 'http://wixtoolset.org/schemas/v4/thmutil', 'wxl': 'http://wixtoolset.org/schemas/v4/wxl'}
+
+install_folder = bundle.find("w:Variable[@Name='InstallFolder']", ns)
+assert install_folder is not None, 'Burn must initialize the folder variable edited by the Options page'
+assert install_folder.get('Type') == 'formatted', 'default folder must expand Burn folder variables'
+assert install_folder.get('Value') == '[ProgramFiles64Folder]\\Beskid', 'default must resolve under 64-bit Program Files'
+
+options = theme.find(".//thm:Page[@Name='Options']", ns)
+editbox = options.find("thm:Editbox[@Name='InstallFolder']", ns) if options is not None else None
+browse = options.find(".//thm:BrowseDirectoryAction[@VariableName='InstallFolder']", ns) if options is not None else None
+assert editbox is not None and browse is not None, 'Options edit and Browse must change the same Burn variable'
+options_ok = options.find("thm:Button[@Name='OptionsOkButton']/thm:ChangePageAction", ns) if options is not None else None
+assert options_ok is not None and options_ok.get('Page') == 'InstallFolderCheck', 'Options must save its editbox value before validating it'
+options_cancel = options.find("thm:Button[@Name='OptionsCancelButton']/thm:ChangePageAction", ns) if options is not None else None
+assert options_cancel is not None and options_cancel.get('Page') == 'InstallFolderCheck' and options_cancel.get('Cancel') == 'yes', 'Options Cancel must discard pending edits and return through the folder gate'
+folder_check = theme.find(".//thm:Page[@Name='InstallFolderCheck']", ns)
+continue_action = folder_check.find("thm:Button[@Name='FolderCheckContinueButton']/thm:ChangePageAction", ns) if folder_check is not None else None
+empty_message = folder_check.find("thm:Label[@Name='FolderCheckEmptyMessage']", ns) if folder_check is not None else None
+back_action = folder_check.find("thm:Button[@Name='FolderCheckBackButton']/thm:ChangePageAction", ns) if folder_check is not None else None
+assert continue_action is not None and continue_action.get('Page') == 'Install' and continue_action.get('Condition') == 'InstallFolder <> ""', 'post-Options transition must require a non-empty folder'
+assert empty_message is not None and empty_message.get('VisibleCondition') == 'InstallFolder = ""', 'empty-folder validation page must explain why setup cannot continue'
+assert back_action is not None and back_action.get('Page') == 'Options', 'user must be able to return and correct an empty folder'
+install_transitions = [action for action in theme.findall('.//thm:ChangePageAction', ns) if action.get('Page') == 'Install']
+assert install_transitions == [continue_action], 'every theme transition to the Install page must pass through the guarded folder action'
+
+chain = bundle.find('w:Chain', ns)
+msi = chain.find('w:MsiPackage', ns) if chain is not None else None
+msi_property = msi.find("w:MsiProperty[@Name='INSTALLDIR']", ns) if msi is not None else None
+assert msi_property is not None and msi_property.get('Value') == '[InstallFolder]', 'MSI INSTALLDIR must receive the Burn folder value'
+
+def formatted_default(value):
+    return value.replace('[ProgramFiles64Folder]', r'C:\Program Files')
+
+def msi_install_dir(folder_value):
+    return msi_property.get('Value').replace('[InstallFolder]', folder_value)
+
+default_path = msi_install_dir(formatted_default(install_folder.get('Value')))
+custom_path = msi_install_dir(r'D:\Beskid Tools\Beskid')
+assert default_path == r'C:\Program Files\Beskid', f'default path resolved to {default_path!r}'
+assert custom_path == r'D:\Beskid Tools\Beskid', f'custom path resolved to {custom_path!r}'
+
+condition = bundle.find("bal:Condition[@Condition='InstallFolder <> \"\"']", ns)
+message_ref = condition.get('Message', '') if condition is not None else ''
+assert message_ref == '$(loc.InstallFolderRequired)', 'Burn must reject an empty install folder with a localized message'
+message_id = message_ref[len('$(loc.'):-1]
+localized_message = strings.find(f"wxl:String[@Id='{message_id}']", ns)
+assert localized_message is not None and localized_message.get('Value'), 'blank-folder rejection message must resolve in the theme localization'
+def permits_install(expression, folder_value):
+    match = re.fullmatch(r'InstallFolder\s*<>\s*""', expression)
+    assert match, 'unexpected blank-folder guard expression'
+    return folder_value != ''
+
+assert not permits_install(condition.get('Condition', ''), ''), 'empty initial folder must fail the Burn condition'
+assert permits_install(condition.get('Condition', ''), default_path)
+assert permits_install(condition.get('Condition', ''), custom_path)
+
+def leave_options(edited_value):
+    # WixStdBA writes the editbox variable while leaving Options. The following
+    # page condition must evaluate the committed value, not the earlier default.
+    committed_folder = edited_value
+    next_action = continue_action.get('Condition')
+    assert next_action == condition.get('Condition'), 'post-Options and startup guards must reject the same empty value'
+    return 'Install' if permits_install(next_action, committed_folder) else 'InstallFolderCheck'
+
+assert leave_options('') == 'InstallFolderCheck', 'clearing Options must not reach the MSI install page'
+assert leave_options(default_path) == 'Install', 'default folder must continue to installation'
+assert leave_options(custom_path) == 'Install', 'custom folder must continue to installation'
+
+def cancel_after_back(committed_value, pending_edit):
+    page_after_back = back_action.get('Page')
+    assert page_after_back == 'Options', 'validation Back must return to Options'
+    # Cancel=yes discards the current Options edits, preserving the value that
+    # was committed when Options was first left for the validation page.
+    restored_value = committed_value
+    return options_cancel.get('Page'), restored_value
+
+page_after_cancel, value_after_cancel = cancel_after_back('', default_path)
+assert page_after_cancel == 'InstallFolderCheck', 'Cancel after Back must revisit the guard page'
+cancel_result = 'Install' if permits_install(continue_action.get('Condition', ''), value_after_cancel) else 'InstallFolderCheck'
+assert cancel_result == 'InstallFolderCheck', 'blank committed value must remain blocked after Back and Cancel'
+PY
+
 # A standalone MSI requires the same 14.40+ runtime as Burn; repair/uninstall stay open.
 grep -Fq "Key='SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64'" "${msi_source}" || \
   fail 'MSI does not search for the x64 Visual C++ runtime'

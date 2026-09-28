@@ -22,6 +22,11 @@
   <String Id="InstallCancelButton" Value="&amp;Cancel" />
   <String Id="OptionsHeader" Value="Setup Options" />
   <String Id="OptionsLocationLabel" Value="Install location:" />
+  <String Id="InstallFolderRequired" Value="Choose a non-empty install location before continuing." />
+  <String Id="FolderCheckHeader" Value="Check Install Location" />
+  <String Id="FolderCheckReadyMessage" Value="Setup will install Beskid in the selected location." />
+  <String Id="FolderCheckBackButton" Value="&amp;Back" />
+  <String Id="FolderCheckContinueButton" Value="&amp;Continue" />
   <String Id="OptionsBrowseButton" Value="&amp;Browse" />
   <String Id="OptionsToolsNote" Value="The developer-tools choice is on the preceding page. Existing vendor tools are retained during repair or uninstall." />
   <String Id="OptionsOkButton" Value="&amp;OK" />
