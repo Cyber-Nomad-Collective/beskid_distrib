@@ -1,17 +1,18 @@
 # macOS Guide — Homebrew and DMG distribution
 
-The `macos-brew` job renders the formula from
+The superrepo's Woodpecker release pipeline renders the formula from
 `beskid_distrib/macos/Formula/beskid.rb.tpl` using the immutable version and
-SHA-256 of the `aarch64-apple-darwin` asset, then pushes it to the
-`Cyber-Nomad-Collective/beskid_homebrew` tap. The separate `macos-dmg` job
-wraps the same immutable CLI and LSP assets into `Beskid.app` and uploads a
-DMG to the corresponding compiler release.
+SHA-256 of the `aarch64-apple-darwin` bundle, then
+`scripts/ci/publish-homebrew-formula.sh` commits it to the
+`Cyber-Nomad-Collective/beskid_homebrew` tap (stable `X.Y.Z` releases only).
+The macOS packaging step wraps the same verified bundle into `Beskid.app` with
+`macos/build-dmg.sh` and uploads the DMG to the corresponding compiler release.
 
 ## Prerequisites (one-time, manual)
 
 1. **Create the tap repo.** Create an **empty** repo named `beskid_homebrew`
-   under `Cyber-Nomad-Collective` (no README/license — homebrew-releaser will
-   populate `Formula/beskid.rb`). Homebrew convention: the tap repo must be
+   under `Cyber-Nomad-Collective` (no README/license; the publish script
+   creates `Formula/beskid.rb`). Homebrew convention: the tap repo must be
    named `homebrew-<something>` to be installable as
    `brew tap <org>/<something>`. We register `beskid_homebrew` and users tap
    it as `cyber-nomad-collective/beskid` (Homebrew strips the `homebrew-`
@@ -24,35 +25,32 @@ DMG to the corresponding compiler release.
    beskid --version
    ```
 
-## Secrets required
+## Secrets
 
-| Secret | Purpose |
-|---|---|
-| `DISTRIB_GH_PAT` | Read immutable macOS assets and upload the DMG to `beskid_compiler`. (Shared with Windows/Ubuntu — set once.) |
-| `HOMEBREW_TAP_GIT_TOKEN` | PAT used to commit + push `Formula/beskid.rb` to `beskid_homebrew`. The default `GITHUB_TOKEN` cannot cross-push to another repo, so a dedicated PAT is mandatory. |
+Formula publication and the DMG upload use the release job's
+`compiler_release_token`, which needs contents write access on
+`beskid_homebrew` and release write access on `beskid_compiler`. See
+`SECRETS.md`. No separate Homebrew token exists.
 
-## Obtaining `HOMEBREW_TAP_GIT_TOKEN`
+## Building programs needs the Xcode Command Line Tools
 
-1. Open https://github.com/settings/personal-access-tokens/new (**fine-grained
-   PAT**, preferred) or https://github.com/settings/tokens/new (classic).
-2. **Fine-grained (recommended):**
-   - **Resource owner:** `Cyber-Nomad-Collective`.
-   - **Repository access:** Only select repositories → `beskid_homebrew`.
-   - **Permissions:** Repository permissions → **Contents: Read and write**.
-   - **Expiration:** 365 days.
-3. **Classic (alternative):** select `repo` scope (full).
-4. Copy the token (`github_pat_...` or `ghp_...`).
-5. Add to the **superrepo** (`Cyber-Nomad-Collective/beskid`):
-   - **Settings → Secrets and variables → Actions → New repository secret.**
-   - Name: `HOMEBREW_TAP_GIT_TOKEN`.
+`beskid build` and `beskid run` link with `cc`, and static libraries also use
+`libtool` and `ranlib`. Install the tools once with:
 
-## Apple Silicon only (v1)
+```sh
+xcode-select --install
+```
 
-The compiler workflow builds only `aarch64-apple-darwin`. The formula
+`beskid test` runs tests in the JIT and does not need them.
+
+## Apple Silicon only
+
+The compiler pipeline builds only `aarch64-apple-darwin`. The formula
 declares `on_intel { depends_on arch: :arm }` so `brew install beskid` on an
 Intel Mac fails with a clear arch-mismatch message rather than a binary crash.
-Adding Intel later requires extending `compiler.yml`'s build matrix with
-`x86_64-apple-darwin`, fetching that asset, and adding a second
+Adding Intel later requires adding an `x86_64-apple-darwin` target to the
+Woodpecker macOS build and the bundle extractor's supported targets, fetching
+that bundle, and adding a second
 `on_intel do ... end` block pointing at the Intel URL + sha256.
 
 ## Signing and notarization

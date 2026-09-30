@@ -1,54 +1,56 @@
-# Ubuntu / Debian Guide — CI secrets for the .deb pipeline
+# Ubuntu / Debian Guide
 
-The Ubuntu packaging job (`ubuntu-deb`) runs
-`beskid_distrib/deb/build-deb.sh`, which wraps the prebuilt linux-amd64 CLI +
-LSP binaries into a `.deb` via `dpkg-deb --build`, then uploads the `.deb` to
-the `cli-latest` / `cli-v<version>` release on `beskid_compiler`.
+The Linux packaging step runs `beskid_distrib/deb/build-deb.sh`, which wraps the
+verified `x86_64-unknown-linux-gnu` target bundle into a `.deb` with
+`dpkg-deb --build` and uploads it to the `cli-v<version>` release (and the
+rolling `cli-stable` / `cli-unstable` release) on `beskid_compiler`. It uses the
+release job's `compiler_release_token`; see `SECRETS.md`.
 
-## Secret required
-
-| Secret | Purpose |
-|---|---|
-| `DISTRIB_GH_PAT` | Download the rolling `beskid-linux-amd64` + `beskid_lsp-linux-amd64` from `beskid_compiler`, and upload the built `.deb` back to that release. (Shared with Windows.) |
-
-No Launchpad account, no GPG signing key, no apt repo is required for v1 — the
-`.deb` is distributed as a release asset that users download and install with
-`dpkg -i` or `apt install ./beskid-<version>-amd64.deb`. This is the simplest
-distribution path and the one most users expect for a single-binary CLI.
-
-## Obtaining `DISTRIB_GH_PAT`
-
-See `Windows_Guide.md` — the same `DISTRIB_GH_PAT` secret covers Windows and
-Ubuntu. Set it once.
+No Launchpad account, GPG key, or apt repository is involved. The `.deb` is a
+release asset that users download and install with `apt install ./<file>.deb`.
 
 ## What the .deb does
 
-The package layout (from `beskid_distrib/deb/debian/control` + `build-deb.sh`):
+The package installs the whole toolchain under the `/usr` prefix so the CLI can
+find its runtime kit and corelib from its own executable, with no environment
+variables:
 
-- `beskid` and `beskid_lsp` are installed to `/usr/bin/` (on PATH by default on
-  Debian/Ubuntu — no profile edits needed).
-- `postinst` enforces `0755` mode on both binaries and prints a confirmation.
-- `prerm` is a no-op (the binaries leave no user data).
-- `control` declares `Depends: libc6` and `Architecture: amd64`.
-- The package version is stamped from the rolling release semver.
+- `/usr/bin/beskid`, `/usr/bin/beskid_lsp`, `/usr/bin/beskid-up`
+- `/usr/lib/beskid-runtime/abi-5/` (the ABI-v5 runtime kit)
+- `/usr/beskid_corelib/`, `/usr/packages/`, and `/usr/release-version.txt`
+- `/usr/share/doc/beskid/copyright` and `NOTICE`
+
+`postinst` enforces `0755` on the three binaries and prints a confirmation.
+`prerm` is a no-op. `control` declares `Depends: libc6` and
+`Architecture: amd64`, and stamps the release version.
 
 ## Install (end users)
 
 ```sh
-# download beskid-<version>-amd64.deb from the cli-latest release on beskid_compiler
+# download beskid-<version>-amd64.deb from the cli-v<version> release on beskid_compiler
 sudo apt install ./beskid-<version>-amd64.deb
-# verify:
 beskid --version
 ```
 
-`apt install ./<file>.deb` resolves dependencies (libc6) automatically;
-`dpkg -i` works too but does not pull dependencies.
+`apt install ./<file>.deb` also installs the recommended packages below;
+`dpkg -i` does not pull dependencies.
 
-## Future: apt repo (not in v1)
+## Building programs needs a C toolchain
 
-If you later want `apt update && apt install beskid` (without a manual
-download), host the `.deb` in an apt repo — either on GitHub Pages with
-`aptly` + a GPG-signed `Release` file (secrets: `APT_GPG_PRIVATE_KEY`,
-`APT_GPG_PASSPHRASE`), or on a hosted apt repo (Cloudsmith, Gemfury,
-Launchpad PPA). The `.deb` produced today is identical and reusable; only the
-publish target and signing change.
+`beskid build` and `beskid run` link with the system C compiler driver (`cc`)
+and, for static libraries, `ar` and `ranlib`. The package therefore
+`Recommends: gcc | c-compiler, libc6-dev`. If you installed with
+`--no-install-recommends`, or on a minimal image, add them yourself:
+
+```sh
+sudo apt install gcc libc6-dev
+```
+
+`beskid test` runs tests in the JIT and does not need them.
+
+## Future: apt repository
+
+If you later want `apt update && apt install beskid`, host the `.deb` in an apt
+repository (for example GitHub Pages with a signed `Release` file, or a hosted
+service such as Cloudsmith or a Launchpad PPA). The `.deb` produced today is
+reusable as is; only the publish target and signing change.

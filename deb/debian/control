@@ -4,10 +4,13 @@ Architecture: amd64
 Maintainer: Piotr Mikstacki <piotr@beskid-lang.org>
 Installed-Size: __INSTALLED_SIZE_KB__
 Depends: libc6
+Recommends: gcc | c-compiler, libc6-dev
 Section: devel
 Priority: optional
 Homepage: https://beskid-lang.org
-Description: Beskid compiler CLI and LSP (AOT, host composition)
+Description: Beskid compiler toolchain (AOT, host composition)
  Beskid is an AOT-only compiler with host composition. This package ships the
- prebuilt beskid CLI and beskid_lsp binaries, installed to /usr/bin and placed
- on the system PATH automatically.
+ prebuilt beskid CLI, beskid_lsp language server, and beskid-up updater in
+ /usr/bin, together with the ABI-v5 runtime kit, corelib, and bundled packages
+ they locate from their own install prefix. Building programs links with the
+ system C compiler, so a C compiler and libc headers are recommended.

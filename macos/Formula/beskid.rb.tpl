@@ -1,13 +1,13 @@
 # Beskid Homebrew formula template.
 #
-# Rendered by the macos-brew CI job with:
+# Rendered by the superrepo's Woodpecker release pipeline with:
 #   __VERSION__  -> immutable release semver
 #   __SHA256__   -> sha256 of the complete darwin-arm64 target bundle
 #
-# The rendered file is committed to Cyber-Nomad-Collective/beskid_homebrew
-# by Justintime50/homebrew-releaser. We render it ourselves (rather than letting
-# the action do it) because the release assets live on beskid_compiler, not the
-# superrepo the workflow runs in.
+# The rendered file is committed to Cyber-Nomad-Collective/beskid_homebrew by
+# scripts/ci/publish-homebrew-formula.sh in the superrepo. It is rendered here
+# because the release assets live on beskid_compiler, not the superrepo the
+# pipeline runs in.
 class Beskid < Formula
   desc "Beskid compiler CLI (AOT, host composition)"
   homepage "https://beskid-lang.org"
@@ -16,7 +16,7 @@ class Beskid < Formula
   version "__VERSION__"
   sha256 "__SHA256__"
 
-  # Apple Silicon only in v1 (compiler.yml builds aarch64-apple-darwin only).
+  # Apple Silicon only: the compiler pipeline builds aarch64-apple-darwin only.
   on_macos do
     on_arm do
       # nothing extra; binary is prebuilt for arm64

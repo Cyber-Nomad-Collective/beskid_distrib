@@ -1,4 +1,4 @@
-# Extends the beskid base image with GitHub Actions runner dependencies.
+# Extends the beskid base image with CI runner dependencies.
 #
 # This image is meant for CI runners that need beskid + curl, jq, git etc.
 # to interact with GitHub APIs and perform distribution tasks.
@@ -15,6 +15,8 @@ ENV PATH="/opt/beskid/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
+      gcc \
+      libc6-dev \
       curl \
       jq \
       git \

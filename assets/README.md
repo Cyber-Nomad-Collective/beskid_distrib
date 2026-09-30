@@ -11,8 +11,8 @@ Regenerate checked-in artwork from the parent checkout with
 
 ## Regenerating derived formats
 
-The Windows `.ico` is derived from the 512px source. In CI, the `windows-msi`
-job generates `beskid.ico` from `beskid-512.png` using
+The Windows `.ico` is derived from the 512px source. In CI, the Woodpecker Windows
+pipeline generates `beskid.ico` from `beskid-512.png` using
 ImageMagick (`magick beskid-512.png beskid.ico`) so the binary `.ico` is not
 checked in. To regenerate locally:
 

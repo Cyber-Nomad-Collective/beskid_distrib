@@ -1,6 +1,8 @@
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+# gcc and libc6-dev provide the `cc`, `ar`, and `ranlib` that `beskid build` and
+# `beskid run` link with.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gcc libc6-dev && \
     rm -rf /var/lib/apt/lists/*
 
 COPY oci-build/beskid-bundle/ /opt/beskid/

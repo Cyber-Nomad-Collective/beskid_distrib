@@ -105,7 +105,8 @@ fi
 assert_contains "${publisher}" 'beskid-${version}-windows-amd64.exe'
 assert_contains "${publisher}" 'beskid-${version}-macos-arm64.dmg'
 assert_contains "${publisher}" 'beskid-${version}-amd64.deb'
-assert_contains "${publisher}" 'publication requires CI manual main and GH_TOKEN'
+assert_contains "${publisher}" 'publication requires an external manual publisher and GH_TOKEN'
+assert_contains "${publisher}" 'manual publication requires a clean local main checkout'
 assert_contains "${publisher}" 'publish-release-stream.sh'
 assert_contains "${publisher}" 'gh release upload "cli-v${version}"'
 if grep -Eiq 'linux-snap|snapcraft|canonical/action-(build|publish)|SNAPCRAFT_STORE_CREDENTIALS' "${workflows}"/*.yml "${packager}" "${publisher}"; then
@@ -119,6 +120,30 @@ fi
 if grep -Riq -E 'snap store|snapcraft|snap install|linux-snap|SNAPCRAFT_STORE_CREDENTIALS' \
   "${root}/README.md" "${root}/SECRETS.md" "${root}/docs"; then
   echo "retired Snap claims or credentials remain in distribution documentation" >&2
+  exit 1
+fi
+
+# Documentation and metadata describe the Woodpecker pipeline that exists, not the
+# retired GitHub Actions one. SECRETS.md may name the retired secrets only to say
+# they are unused, so it is checked for the real secret instead.
+if grep -RIn -E 'cli-latest|lsp-latest|distribute\.yml|DISTRIB_GH_PAT|HOMEBREW_TAP_GIT_TOKEN|homebrew-releaser|macos-brew|windows-msi|macos-dmg' \
+  "${root}/README.md" "${root}/docs" "${root}/docker" "${root}/macos" "${root}/assets"; then
+  echo "retired GitHub Actions or pre-Woodpecker names remain in distribution documentation" >&2
+  exit 1
+fi
+assert_contains "${root}/SECRETS.md" 'compiler_release_token'
+if grep -Fq 'from_secret: compiler_release_token' "${workflows}/release.yml"; then
+  echo 'Woodpecker release preparation must not receive publication credentials' >&2
+  exit 1
+fi
+
+# `beskid build` and `beskid run` link with the system C driver, so every Linux
+# consumer of the toolchain must be able to get one.
+assert_contains "${root}/deb/debian/control" 'Recommends: gcc | c-compiler, libc6-dev'
+assert_contains "${root}/docker/Dockerfile" 'gcc libc6-dev'
+assert_contains "${root}/docker/Dockerfile.runner" 'gcc'
+if grep -Fq 'BESKID_VERSION' "${root}/docker/docker-compose.yml" "${root}/docker/README.md"; then
+  echo "container docs and compose must not pass a build argument the Dockerfiles never declare" >&2
   exit 1
 fi
 

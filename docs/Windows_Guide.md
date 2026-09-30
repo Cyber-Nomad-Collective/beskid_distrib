@@ -7,6 +7,11 @@ prerequisites. Allow space for the Beskid installation and, when selected,
 several GB for Visual Studio Build Tools, Windows SDK, and LLVM. Setup may
 request a restart; complete it before opening a new shell.
 
+The superrepo's Woodpecker Windows packaging step runs
+`windows/build-msi.sh` and `windows/build-exe.sh` using WiX v4 to build
+checksummed MSI and Burn setup EXE artifacts. Publication to the
+`beskid_compiler` release is a separate reviewed manual operation.
+
 ## Choose what to install
 
 The setup offers an unchecked **Install developer tools (MSVC, Windows SDK,
