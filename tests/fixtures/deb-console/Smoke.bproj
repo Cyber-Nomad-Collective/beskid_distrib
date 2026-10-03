@@ -1,0 +1,10 @@
+Smoke {
+  name    = "Smoke"
+  version = "0.1.0"
+  root    = "Src"
+}
+
+target "app" {
+  kind  = App
+  entry = "Main.bd"
+}

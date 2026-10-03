@@ -16,11 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a verified remote payload in the Windows setup `.exe`, installing it only
   when the 14.40+ x64 runtime is missing and retaining it on uninstall. The
   standalone MSI stops with an actionable message when the runtime is missing.
-- Recommend a C compiler and libc headers from the Debian package
-  (`Recommends: gcc | c-compiler, libc6-dev`) and install `gcc` and `libc6-dev`
-  in both container images, because `beskid build` and `beskid run` link with
-  the system `cc`, `ar`, and `ranlib`. Document the same requirement for
-  Ubuntu and for macOS (Xcode Command Line Tools).
+- Install `gcc` and `libc6-dev` in both container images because native
+  linking uses the system C toolchain. Document the macOS requirement for
+  Xcode Command Line Tools.
+- Add a clean Ubuntu DEB installation regression that disables recommendations,
+  exercises Clang/cc/binutils, and builds/runs an installed-prefix Beskid project
+  while preserving its lockfile.
 - Cover the 0.5 release line in the version-contract tests and guard the
   documentation and toolchain contracts against regression.
 - Document Windows end-user prerequisites: the redistributable for every
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Require Clang, a C compiler, binutils, and libc headers as DEB dependencies;
+  native bootstrap compilation cannot use GCC in place of Clang.
 - Describe the Woodpecker release pipeline instead of the retired GitHub Actions
   one across the README, per-platform guides, `SECRETS.md`, and the Homebrew
   formula template: `cli-v<version>` plus rolling `cli-stable` / `cli-unstable`

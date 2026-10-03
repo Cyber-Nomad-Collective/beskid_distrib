@@ -137,9 +137,9 @@ if grep -Fq 'from_secret: compiler_release_token' "${workflows}/release.yml"; th
   exit 1
 fi
 
-# `beskid build` and `beskid run` link with the system C driver, so every Linux
-# consumer of the toolchain must be able to get one.
-assert_contains "${root}/deb/debian/control" 'Recommends: gcc | c-compiler, libc6-dev'
+# Clang compiles native objects; cc and binutils provide linking/archive tools.
+# The clean-container install test verifies the actual dependency closure.
+assert_contains "${root}/deb/debian/control" 'Depends: libc6, clang, gcc | c-compiler, binutils, libc6-dev'
 assert_contains "${root}/docker/Dockerfile" 'gcc libc6-dev'
 assert_contains "${root}/docker/Dockerfile.runner" 'gcc'
 if grep -Fq 'BESKID_VERSION' "${root}/docker/docker-compose.yml" "${root}/docker/README.md"; then

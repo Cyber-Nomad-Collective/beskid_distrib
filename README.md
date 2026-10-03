@@ -69,11 +69,12 @@ repository's superrepo builds them now. Build them locally as described in
 
 ## Building programs needs a C toolchain
 
-`beskid build` and `beskid run` link with the system C compiler driver (`cc`)
-plus `ar` and `ranlib` on Linux, and with `cc` and `libtool` on macOS. On
-Windows they need the MSVC tools. The `.deb` recommends a compiler and C
-library headers, the Docker images install them, and the per-platform guides
-list the prerequisites. `beskid test` does not link programs.
+`beskid build` and `beskid run` compile native platform objects with Clang and
+link with the system C compiler driver (`cc`). Linux static libraries use `ar`
+and `ranlib`; macOS uses `libtool`. Windows needs LLVM and the MSVC tools.
+The `.deb` requires Clang, a C compiler, binutils, and C library headers so
+build/run also work with recommendations disabled. See the per-platform guides
+for prerequisites and the Ubuntu guide for the clean-container install test.
 
 See `SECRETS.md` for historical and manual-publishing credential guidance.
 

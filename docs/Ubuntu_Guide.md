@@ -17,12 +17,12 @@ variables:
 
 - `/usr/bin/beskid`, `/usr/bin/beskid_lsp`, `/usr/bin/beskid-up`
 - `/usr/lib/beskid-runtime/abi-5/` (the ABI-v5 runtime kit)
-- `/usr/beskid_corelib/`, `/usr/packages/`, and `/usr/release-version.txt`
+- `/usr/beskid_corelib/` (including `packages/`) and `/usr/release-version.txt`
 - `/usr/share/doc/beskid/copyright` and `NOTICE`
 
 `postinst` enforces `0755` on the three binaries and prints a confirmation.
-`prerm` is a no-op. `control` declares `Depends: libc6` and
-`Architecture: amd64`, and stamps the release version.
+`prerm` is a no-op. `control` declares the required native toolchain dependencies
+listed below and `Architecture: amd64`, and stamps the release version.
 
 ## Install (end users)
 
@@ -32,21 +32,34 @@ sudo apt install ./beskid-<version>-amd64.deb
 beskid --version
 ```
 
-`apt install ./<file>.deb` also installs the recommended packages below;
-`dpkg -i` does not pull dependencies.
+`apt install ./<file>.deb` installs all required dependencies, even with
+`--no-install-recommends`. `dpkg -i` does not download missing dependencies;
+use `sudo apt --fix-broken install` if needed to finish configuration.
 
 ## Building programs needs a C toolchain
 
-`beskid build` and `beskid run` link with the system C compiler driver (`cc`)
-and, for static libraries, `ar` and `ranlib`. The package therefore
-`Recommends: gcc | c-compiler, libc6-dev`. If you installed with
-`--no-install-recommends`, or on a minimal image, add them yourself:
+`beskid build` and `beskid run` use Clang to compile native platform and
+bootstrap objects, then the system C compiler driver (`cc`) to link. Static
+libraries also use `ar` and `ranlib`. GCC cannot replace Clang's `-target`
+invocation. The DEB therefore declares hard dependencies on `clang`,
+`gcc | c-compiler`, `binutils`, `libc6-dev`, and `libc6` rather than relying
+on recommendations or a separately configured developer machine.
+
+## Clean installation qualification
+
+Run the regression test on the builder in a fresh Ubuntu 24.04 x86_64 container:
 
 ```sh
-sudo apt install gcc libc6-dev
+docker run --name beskid-deb-qualification \
+  -v "$PWD:/test:ro" -v "$PWD/output:/input:ro" ubuntu:24.04 \
+  bash /test/tests/deb-toolchain-install.test.sh /input/beskid-<version>-amd64.deb
 ```
 
-`beskid test` runs tests in the JIT and does not need them.
+The test rejects a preinstalled compiler, installs with recommendations
+disabled, exercises Clang's target flag plus `cc`, `ar`, and `ranlib`, and
+builds/runs an installed-prefix Beskid project without environment overrides.
+Its lockfile must stay unchanged. Retain the container and output as release
+evidence; this qualification is separate from metadata-only static tests.
 
 ## Future: apt repository
 
