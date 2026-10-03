@@ -49,6 +49,8 @@ assert_contains "${root}/deb/build-deb.sh" 'cp -a "${BUILD_DIR}/lib" "${PKGROOT}
 assert_contains "${root}/deb/build-deb.sh" 'cp -a "${BUILD_DIR}/beskid_corelib" "${PKGROOT}/usr/beskid_corelib"'
 assert_contains "${root}/deb/build-deb.sh" '[[ -d "${BUILD_DIR}/beskid_corelib/packages" ]]'
 assert_contains "${root}/macos/Formula/beskid.rb.tpl" 'libexec.install "bin", "lib", "beskid_corelib", "release-version.txt"'
+assert_contains "${root}/docs/MacOS_Guide.md" 'brew tap cyber-nomad-collective/beskid https://github.com/Cyber-Nomad-Collective/beskid_homebrew.git'
+assert_contains "${root}/docs/MacOS_Guide.md" 'brew install cyber-nomad-collective/beskid/beskid'
 assert_contains "${root}/docker/Dockerfile" 'COPY oci-build/beskid-bundle/ /opt/beskid/'
 assert_contains "${root}/docker/Dockerfile.runner" 'COPY --from=beskid-base /opt/beskid /opt/beskid'
 

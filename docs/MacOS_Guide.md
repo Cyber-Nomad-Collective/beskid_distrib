@@ -10,20 +10,20 @@ The macOS packaging step wraps the same verified bundle into `Beskid.app` with
 
 ## Prerequisites (one-time, manual)
 
-1. **Create the tap repo.** Create an **empty** repo named `beskid_homebrew`
-   under `Cyber-Nomad-Collective` (no README/license; the publish script
-   creates `Formula/beskid.rb`). Homebrew convention: the tap repo must be
-   named `homebrew-<something>` to be installable as
-   `brew tap <org>/<something>`. We register `beskid_homebrew` and users tap
-   it as `cyber-nomad-collective/beskid` (Homebrew strips the `homebrew-`
-   prefix from the repo name when matching the tap).
+1. **Use the existing tap repo.** The publisher updates `Formula/beskid.rb`
+   in `Cyber-Nomad-Collective/beskid_homebrew`. Its name does not follow
+   Homebrew's `homebrew-<repository>` convention, so the tap command must
+   supply its explicit Git URL. The one-argument command would instead look
+   for the nonexistent `Cyber-Nomad-Collective/homebrew-beskid` repository.
 
 2. **Verify install path.** After the first publish, users run:
    ```sh
-   brew tap cyber-nomad-collective/beskid
-   brew install beskid
+   brew tap cyber-nomad-collective/beskid https://github.com/Cyber-Nomad-Collective/beskid_homebrew.git
+   brew install cyber-nomad-collective/beskid/beskid
    beskid --version
    ```
+   The fully qualified install selects this tap and grants trust only to its
+   Beskid formula. See [Homebrew's tap documentation](https://docs.brew.sh/Taps).
 
 ## Secrets
 

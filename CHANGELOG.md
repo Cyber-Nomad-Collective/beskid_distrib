@@ -69,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Correct the Homebrew tap command to use the existing repository's explicit
+  Git URL and install the fully qualified formula without whole-tap trust.
+
 - Make the Windows setup directory choice effective: pass the branded Options
   path to MSI `INSTALLDIR`, default it to Program Files, and block an empty
   path even after returning through Options.
