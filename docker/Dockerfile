@@ -1,8 +1,7 @@
 FROM debian:bookworm-slim
 
-# gcc and libc6-dev provide the `cc`, `ar`, and `ranlib` that `beskid build` and
-# `beskid run` link with.
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gcc libc6-dev && \
+# Clang compiles native platform objects; cc/binutils link and archive them.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates clang binutils gcc libc6-dev && \
     rm -rf /var/lib/apt/lists/*
 
 COPY oci-build/beskid-bundle/ /opt/beskid/

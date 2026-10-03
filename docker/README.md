@@ -11,12 +11,18 @@ Sources for two container images built from a verified Beskid target bundle.
 
 | Image | Description |
 |---|---|
-| `beskid` (`Dockerfile`) | Complete no-environment toolchain bundle on Debian Bookworm Slim, plus `gcc` and `libc6-dev` so `beskid build` and `beskid run` can link. |
+| `beskid` (`Dockerfile`) | Complete no-environment toolchain bundle on Debian Bookworm Slim, plus Clang, GCC, binutils and libc development headers for native compilation and linking. |
 | `beskid-runner` (`Dockerfile.runner`) | The same bundle plus `curl`, `jq`, `git`, `unzip`, and `gnupg` for CI jobs. |
 
 The bundle is installed at `/opt/beskid`. Its `bin`, ABI-v5 runtime kit,
 corelib, packages, and version marker stay under that single prefix, so no
 Beskid runtime or corelib environment variables are required.
+
+Both images install the native prerequisites with recommendations disabled.
+Clang compiles the target-specific platform/bootstrap objects; `cc` links the
+program, and `ar`/`ranlib` build static archives. The runner's final stage copies
+the bundle, not the base image's system packages, so it declares these tools
+independently.
 
 ## Build locally
 
@@ -33,6 +39,22 @@ docker build -f beskid_distrib/docker/Dockerfile -t beskid:local .
 docker build -f beskid_distrib/docker/Dockerfile.runner \
   --build-arg BESKID_BASE_IMAGE=beskid:local -t beskid-runner:local .
 ```
+
+Qualify both actual images before publishing them. From the superrepo root:
+
+```sh
+for image in beskid:local beskid-runner:local; do
+  docker run --network=none --entrypoint bash \
+    -v "$PWD/beskid_distrib:/test:ro" "$image" \
+    /test/tests/container-toolchain.test.sh <version>
+done
+```
+
+The test installs nothing and rejects missing native tools. It compiles a
+libc-header probe, exercises the linker/archive tools, and analyzes/builds/runs
+a project using only the installed bundle. The generated lock must remain
+unchanged. The test prints its evidence directory and retains it inside the
+stopped container. Neither local image builds nor this test publish images.
 
 `<version>` is `X.Y.Z` or `X.Y.Z-unstable`. `docker-compose.yml` builds the same
 two images with the superrepo as the build context:

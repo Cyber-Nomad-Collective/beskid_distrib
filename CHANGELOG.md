@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Install Clang and binutils explicitly in both toolchain container stages;
+  qualify each actual image with offline native compilation and installed-prefix
+  Beskid build/run rather than relying on package-list assertions alone.
 - Require Clang, a C compiler, binutils, and libc headers as DEB dependencies;
   native bootstrap compilation cannot use GCC in place of Clang.
 - Describe the Woodpecker release pipeline instead of the retired GitHub Actions
