@@ -34,14 +34,15 @@ Formula publication and the DMG upload use the release job's
 
 ## Building programs needs the Xcode Command Line Tools
 
-`beskid build` and `beskid run` link with `cc`, and static libraries also use
+`beskid build`, `beskid run`, and `beskid test` link with `cc`, and static libraries also use
 `libtool` and `ranlib`. Install the tools once with:
 
 ```sh
 xcode-select --install
 ```
 
-`beskid test` runs tests in the JIT and does not need them.
+`beskid test` compiles selected tests to native executables and requires the
+same tools. Each test runs in a fresh process.
 
 ## Apple Silicon only
 
@@ -59,3 +60,13 @@ The current DMG is unsigned. Gatekeeper can warn when a browser-downloaded DMG
 is opened. Add Developer ID signing and notarization before declaring the DMG
 as a trusted public release channel; Homebrew remains the recommended
 package-managed installation path until then.
+
+## Installation ownership and updates
+
+`beskid toolchain status` reports the running executable and validates the
+complete private payload. Homebrew installs under its `libexec` prefix and
+records Homebrew ownership; update through `brew upgrade beskid`. The DMG
+records native-installer ownership inside `Beskid.app/Contents/Resources/toolchain`;
+replace that application with the qualified replacement DMG.
+`beskid toolchain update` provides the matching channel guidance without
+overwriting those installations.

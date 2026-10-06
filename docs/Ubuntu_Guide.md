@@ -11,16 +11,17 @@ release asset that users download and install with `apt install ./<file>.deb`.
 
 ## What the .deb does
 
-The package installs the whole toolchain under the `/usr` prefix so the CLI can
-find its runtime kit and corelib from its own executable, with no environment
-variables:
+The package installs the complete toolchain under the private `/usr/lib/beskid`
+prefix. Package-owned `/usr/bin` launch links execute that payload, so the CLI
+finds its runtime kit and Corelib without environment overrides. A versioned
+owner receipt binds every payload file to the Debian installation:
 
 - `/usr/bin/beskid`, `/usr/bin/beskid_lsp`, `/usr/bin/beskid-up`
-- `/usr/lib/beskid-runtime/abi-5/` (the ABI-v5 runtime kit)
-- `/usr/beskid_corelib/` (including `packages/`) and `/usr/release-version.txt`
+- `/usr/lib/beskid/lib/beskid-runtime/abi-5/` (the ABI-v5 runtime kit)
+- `/usr/lib/beskid/beskid_corelib/` (including `packages/`) and `/usr/lib/beskid/release-version.txt`
 - `/usr/share/doc/beskid/copyright` and `NOTICE`
 
-`postinst` enforces `0755` on the three binaries and prints a confirmation.
+`postinst` enforces `0755` on the three private binaries and prints a confirmation.
 `prerm` is a no-op. `control` declares the required native toolchain dependencies
 listed below and `Architecture: amd64`, and stamps the release version.
 
@@ -30,15 +31,20 @@ listed below and `Architecture: amd64`, and stamps the release version.
 # download beskid-<version>-amd64.deb from the cli-v<version> release on beskid_compiler
 sudo apt install ./beskid-<version>-amd64.deb
 beskid --version
+beskid toolchain status
 ```
 
 `apt install ./<file>.deb` installs all required dependencies, even with
 `--no-install-recommends`. `dpkg -i` does not download missing dependencies;
 use `sudo apt --fix-broken install` if needed to finish configuration.
 
-## Building programs needs a C toolchain
+Update by downloading the qualified replacement DEB and repeating
+`sudo apt install ./beskid-<version>-amd64.deb`. `beskid toolchain update`
+reports this owning-channel guidance and does not replace package-owned files.
 
-`beskid build` and `beskid run` use Clang to compile native platform and
+## Building and testing programs needs a C toolchain
+
+`beskid build`, `beskid run`, and `beskid test` use Clang to compile native platform and
 bootstrap objects, then the system C compiler driver (`cc`) to link. Static
 libraries also use `ar` and `ranlib`. GCC cannot replace Clang's `-target`
 invocation. The DEB therefore declares hard dependencies on `clang`,

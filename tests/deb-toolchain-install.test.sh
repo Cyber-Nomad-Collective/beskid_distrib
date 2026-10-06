@@ -34,6 +34,10 @@ for tool in clang cc ar ranlib; do
 done
 [[ "$(command -v beskid)" == /usr/bin/beskid ]]
 /usr/bin/beskid --version
+[[ "$(readlink -f /usr/bin/beskid)" == /usr/lib/beskid/bin/beskid ]]
+[[ -f /usr/lib/beskid/.beskid-owner.json ]]
+/usr/bin/beskid toolchain status | grep -F 'Installation owner: debian'
+[[ ! -e /usr/beskid_corelib && ! -e /usr/release-version.txt ]]
 
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
@@ -44,15 +48,22 @@ ranlib "$work/probe.a"
 cc "$work/probe.a" -o "$work/probe"
 "$work/probe"
 
-mkdir -p "$work/home" "$work/project"
+mkdir -p "$work/project"
 cp -a "$root/tests/fixtures/deb-console/." "$work/project/"
-export HOME="$work/home"
+export BESKID_HOME="$work/toolchain-home"
+export BESKID_CONFIG_DIR="$work/config"
 unset BESKID_CORELIB_ROOT CORELIB_ROOT BESKID_RUNTIME_PREFIX BESKID_CLI_BIN
 unset GH_TOKEN GITHUB_TOKEN NODE_AUTH_TOKEN NPM_TOKEN
 cd "$work/project"
-/usr/bin/beskid analyze --project Smoke.bproj --plain
+/usr/bin/beskid check --project Smoke.bproj --plain
 sha256sum Project.lock > "$work/lock.sha256"
 /usr/bin/beskid build --project Smoke.bproj --locked --plain
 /usr/bin/beskid run --project Smoke.bproj --locked --plain
+unset BESKID_RELEASE_MANIFEST_URL
+if /usr/bin/beskid toolchain update >"$work/update.out" 2>&1; then
+  echo 'Package owner unexpectedly permitted direct update' >&2; exit 1
+fi
+grep -F 'apt install ./beskid-' "$work/update.out"
+! grep -Fq 'set BESKID_RELEASE_MANIFEST_URL' "$work/update.out"
 sha256sum --check "$work/lock.sha256"
 echo 'Clean DEB toolchain install and AOT build/run: PASS'

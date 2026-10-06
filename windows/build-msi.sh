@@ -47,9 +47,15 @@ for artwork in beskid-msi-banner.png beskid-msi-dialog.png; do
 done
 
 out="beskid-${VERSION}-windows-amd64.msi"
-fragment="$(mktemp "${TMPDIR:-/tmp}/beskid-bundle-files.XXXXXX.wxs")"
-trap 'rm -f "${fragment}"' EXIT
-node "${DISTRIB_ROOT}/windows/render-bundle-fragment.mjs" "${BUILD_DIR}" "${fragment}"
+stage="$(mktemp -d "${TMPDIR:-/tmp}/beskid-msi-owner.XXXXXX")"
+trap 'rm -rf "${stage}"' EXIT
+private_bundle="${stage}/toolchain"
+mkdir -p "${private_bundle}"
+cp -a "${BUILD_DIR}/." "${private_bundle}/"
+node "${DISTRIB_ROOT}/scripts/stamp-installation-owner.mjs" \
+  "${private_bundle}" windows-installer "${VERSION}" x86_64-pc-windows-msvc
+fragment="${stage}/bundle-files.wxs"
+node "${DISTRIB_ROOT}/windows/render-bundle-fragment.mjs" "${private_bundle}" "${fragment}"
 
 wix build \
   "${DISTRIB_ROOT}/windows/beskid.wxs" \
@@ -57,7 +63,7 @@ wix build \
   "${fragment}" \
   -ext "WixToolset.UI.wixext/${BESKID_WIX_VERSION}" \
   -d Version="${WINDOWS_VERSION}" \
-  -d BuildDir="${BUILD_DIR}" \
+  -d BuildDir="${private_bundle}" \
   -d AssetsDir="${ASSETS_DIR}" \
   -d DistribRoot="${DISTRIB_ROOT}" \
   -o "${out}"

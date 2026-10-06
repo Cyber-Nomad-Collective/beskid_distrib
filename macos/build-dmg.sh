@@ -35,6 +35,8 @@ toolchain="${resources}/toolchain"
 mkdir -p "${macos}" "${resources}" "${toolchain}"
 
 cp -a "${BUILD_DIR}/." "${toolchain}/"
+node "${DISTRIB_ROOT}/scripts/stamp-installation-owner.mjs" \
+  "${toolchain}" macos-installer "${VERSION}" aarch64-apple-darwin
 cat >"${macos}/beskid" <<'EOF'
 #!/bin/sh
 set -eu

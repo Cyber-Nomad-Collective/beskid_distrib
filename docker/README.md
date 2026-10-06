@@ -32,8 +32,8 @@ distribution scripts, then build from the superrepo root:
 
 ```sh
 # GH_TOKEN needs read access on Cyber-Nomad-Collective/beskid_compiler
-GH_TOKEN=... beskid_distrib/scripts/fetch-release-bundle.sh \
-  <version> x86_64-unknown-linux-gnu oci-build/beskid-bundle
+GH_TOKEN=... bash beskid_distrib/scripts/prepare-container-toolchain.sh \
+  <version> oci-build/beskid-bundle
 
 docker build -f beskid_distrib/docker/Dockerfile -t beskid:local .
 docker build -f beskid_distrib/docker/Dockerfile.runner \

@@ -284,14 +284,15 @@ mkdir -p \
 : >"${tmp}/windows-build/beskid_corelib/beskid_corelib/corelib.bproj"
 : >"${tmp}/windows-build/beskid_corelib/.beskid-bundle.sha256"
 : >"${tmp}/windows-build/beskid_corelib/CoreLib.bws"
+printf '0.4.481-unstable\n' >"${tmp}/windows-build/release-version.txt"
 
 node "${root}/windows/render-bundle-fragment.mjs" \
-  "${tmp}/windows-build" "${tmp}/windows-build/bundle-files.wxs"
-grep -Fq 'ComponentGroup Id="BundleFiles"' "${tmp}/windows-build/bundle-files.wxs" || \
+  "${tmp}/windows-build" "${tmp}/bundle-files.wxs"
+grep -Fq 'ComponentGroup Id="BundleFiles"' "${tmp}/bundle-files.wxs" || \
   fail 'Windows bundle fragment omitted its component group'
-grep -Fq 'Name="beskid.exe"' "${tmp}/windows-build/bundle-files.wxs" || \
+grep -Fq 'Name="beskid.exe"' "${tmp}/bundle-files.wxs" || \
   fail 'Windows bundle fragment omitted the CLI'
-grep -Fq 'Name="abi.json"' "${tmp}/windows-build/bundle-files.wxs" || \
+grep -Fq 'Name="abi.json"' "${tmp}/bundle-files.wxs" || \
   fail 'Windows bundle fragment omitted the runtime kit'
 printf 'ico' >"${tmp}/assets/icons/beskid.ico"
 printf 'png' >"${tmp}/assets/icons/beskid-512.png"

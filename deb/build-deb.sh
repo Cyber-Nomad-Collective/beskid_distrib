@@ -42,12 +42,16 @@ trap 'rm -rf "$STAGE"' EXIT
 PKGROOT="${STAGE}/beskid"
 mkdir -p "${PKGROOT}/usr/bin" "${PKGROOT}/usr/share/doc/beskid" "${PKGROOT}/DEBIAN"
 
-# Binaries into /usr/bin (already on PATH on Debian/Ubuntu by default).
-cp -a "${BUILD_DIR}/bin/." "${PKGROOT}/usr/bin/"
-cp -a "${BUILD_DIR}/lib" "${PKGROOT}/usr/lib"
-cp -a "${BUILD_DIR}/beskid_corelib" "${PKGROOT}/usr/beskid_corelib"
-cp -a "${BUILD_DIR}/release-version.txt" "${PKGROOT}/usr/release-version.txt"
-chmod 0755 "${PKGROOT}/usr/bin/beskid" "${PKGROOT}/usr/bin/beskid_lsp" "${PKGROOT}/usr/bin/beskid-up"
+# The complete immutable payload has a private prefix; /usr/bin owns only launch links.
+toolchain="${PKGROOT}/usr/lib/beskid"
+mkdir -p "${toolchain}"
+cp -a "${BUILD_DIR}/." "${toolchain}/"
+chmod 0755 "${toolchain}/bin/beskid" "${toolchain}/bin/beskid_lsp" "${toolchain}/bin/beskid-up"
+node "${DISTRIB_ROOT}/scripts/stamp-installation-owner.mjs" \
+  "${toolchain}" debian "${VERSION}" x86_64-unknown-linux-gnu
+for tool in beskid beskid_lsp beskid-up; do
+  ln -s "../lib/beskid/bin/${tool}" "${PKGROOT}/usr/bin/${tool}"
+done
 install -m0644 "${DISTRIB_ROOT}/LICENSE" "${PKGROOT}/usr/share/doc/beskid/copyright"
 install -m0644 "${DISTRIB_ROOT}/NOTICE" "${PKGROOT}/usr/share/doc/beskid/NOTICE"
 

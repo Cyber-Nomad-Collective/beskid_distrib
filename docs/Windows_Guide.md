@@ -19,10 +19,12 @@ LLVM)** option:
 
 | Choice | Installs | Commands after setup |
 | --- | --- | --- |
-| Default, runtime only | Beskid CLI, LSP, updater, ABI-v5 runtime kit, corelib, bundled packages, and Visual C++ x64 Redistributable 14.40 or newer when needed | `beskid test` and other CLI/JIT operations |
-| Developer tools selected | Everything above, plus Visual Studio 2022 Build Tools with the Desktop development with C++ workload and Windows SDK, and LLVM with `lld-link` | `beskid build` and `beskid run` from a fresh ordinary shell |
+| Default, runtime only | Beskid CLI, LSP, updater, ABI-v5 runtime kit, corelib, bundled packages, and Visual C++ x64 Redistributable 14.40 or newer when needed | `beskid check`, formatting, documentation and package inspection |
+| Developer tools selected | Everything above, plus Visual Studio 2022 Build Tools with the Desktop development with C++ workload and Windows SDK, and LLVM with `lld-link` | `beskid build`, `beskid run`, and `beskid test` from a fresh ordinary shell |
 
-`beskid run` links an executable, so it requires the native tools too. The
+`beskid run` and `beskid test` link native executables, so they require the
+native tools too. Tests use one compiled object with a fresh process for each
+selected test; assertion failure does not stop later tests. The
 compiler discovers the installed x64 toolchain for its child processes; you
 do not need to open the Visual Studio Native Tools prompt or set global
 `LIB`/`INCLUDE` variables. An existing standard-path Build Tools installation
@@ -156,3 +158,11 @@ not a disposable install target.
 The standalone MSI and setup EXE are currently unsigned, so Windows may show
 an unrecognized-app warning. Release engineering must review that warning and
 the pinned vendor signatures before publishing.
+
+## Installation ownership and updates
+
+The MSI records Windows Installer ownership of the complete private installation
+prefix. `beskid toolchain status` validates that payload and reports the running
+executable. `beskid toolchain update` directs you to the qualified replacement MSI
+or setup EXE, which preserves Windows Installer ownership; it does not activate
+an unrelated direct-download installation.
